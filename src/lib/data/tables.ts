@@ -1,24 +1,38 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
+import {
+  isForbiddenTable,
+  isMissingColumnError,
+  isMissingTableError,
+  missingColumnName,
+  stripForbiddenColumns,
+} from "@/lib/data/forbidden";
 
 const cache = new Map<string, string>();
-
-function isMissingTable(message: string) {
-  return /does not exist|PGRST205|schema cache|not find/i.test(message);
-}
 
 export async function resolveTable(client: SupabaseClient, key: string, names: readonly string[]) {
   const hit = cache.get(key);
   if (hit) return hit;
   let last = "";
   for (const name of names) {
-    if (name === "units") continue;
-    const { error } = await client.from(name).select("*").limit(1);
+    if (isForbiddenTable(name)) continue;
+    const { error } = await client.from(name).select("id").limit(1);
     if (!error) {
       cache.set(key, name);
       return name;
     }
     last = error.message;
-    if (isMissingTable(error.message)) continue;
+    if (isMissingColumnError(error.message)) {
+      const retry = await client.from(name).select("*").limit(1);
+      if (!retry.error) {
+        cache.set(key, name);
+        return name;
+      }
+      last = retry.error.message;
+      if (isMissingTableError(retry.error.message)) continue;
+      cache.set(key, name);
+      return name;
+    }
+    if (isMissingTableError(error.message)) continue;
     cache.set(key, name);
     return name;
   }
@@ -41,13 +55,17 @@ export const TABLE_CANDIDATES = {
   audit: ["audit_logs"],
 };
 
-/** Backend has no units table — satuan lives on parameters.unit / satuan / default_unit. */
-
 export async function selectAll(client: SupabaseClient, key: keyof typeof TABLE_CANDIDATES) {
   const table = await resolveTable(client, key, TABLE_CANDIDATES[key]);
   const { data, error } = await client.from(table).select("*");
   if (error) throw new Error(error.message);
   return { table, data };
+}
+
+function dropColumn(payload: Record<string, unknown>, column: string) {
+  const next = { ...payload };
+  delete next[column];
+  return next;
 }
 
 export async function insertRow(
@@ -57,10 +75,19 @@ export async function insertRow(
 ) {
   const table = await resolveTable(client, key, TABLE_CANDIDATES[key]);
   let last = "Insert gagal.";
-  for (const payload of payloads) {
-    const { data, error } = await client.from(table).insert(payload).select("*").limit(1);
-    if (!error) return { table, row: data?.[0] as Record<string, unknown> | undefined };
-    last = error.message;
+  for (const raw of payloads) {
+    let payload = stripForbiddenColumns(raw);
+    for (let attempt = 0; attempt < 8; attempt += 1) {
+      const { data, error } = await client.from(table).insert(payload).select("id").limit(1);
+      if (!error) return { table, row: data?.[0] as Record<string, unknown> | undefined };
+      last = error.message;
+      const col = missingColumnName(error.message);
+      if (col && col in payload) {
+        payload = dropColumn(payload, col);
+        continue;
+      }
+      break;
+    }
   }
   throw new Error(last);
 }
@@ -73,10 +100,19 @@ export async function updateRow(
 ) {
   const table = await resolveTable(client, key, TABLE_CANDIDATES[key]);
   let last = "Update gagal.";
-  for (const payload of payloads) {
-    const { error } = await client.from(table).update(payload).eq("id", id);
-    if (!error) return;
-    last = error.message;
+  for (const raw of payloads) {
+    let payload = stripForbiddenColumns(raw);
+    for (let attempt = 0; attempt < 8; attempt += 1) {
+      const { error } = await client.from(table).update(payload).eq("id", id);
+      if (!error) return;
+      last = error.message;
+      const col = missingColumnName(error.message);
+      if (col && col in payload) {
+        payload = dropColumn(payload, col);
+        continue;
+      }
+      break;
+    }
   }
   throw new Error(last);
 }

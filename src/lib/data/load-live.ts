@@ -16,6 +16,7 @@ import {
   mapSites,
   unitsFromParameters,
 } from "@/lib/data/mappers";
+import { FORBIDDEN_COLUMNS, missingColumnName } from "@/lib/data/forbidden";
 import { selectAll, TABLE_CANDIDATES, resolveTable } from "@/lib/data/tables";
 import type { LimsData, Sample } from "@/lib/domain/types";
 
@@ -57,27 +58,23 @@ const SAMPLE_COLUMNS = [
 async function loadSamples(client: SupabaseClient): Promise<Sample[]> {
   let last = "";
   for (const name of TABLE_CANDIDATES.samples) {
-    const full = await client.from(name).select("*");
-    if (!full.error && full.data) {
-      return mapSamples(full.data);
+    const columns = SAMPLE_COLUMNS.split(",").filter((col) => !FORBIDDEN_COLUMNS.has(col));
+    for (let attempt = 0; attempt < 12; attempt += 1) {
+      const { data, error } = await client.from(name).select(columns.join(","));
+      if (!error && data) return mapSamples(data);
+      last = error?.message ?? last;
+      const missing = error ? missingColumnName(error.message) : null;
+      if (missing && columns.includes(missing)) {
+        columns.splice(columns.indexOf(missing), 1);
+        continue;
+      }
+      break;
     }
-    last = full.error?.message ?? last;
-    const slim = await client.from(name).select(SAMPLE_COLUMNS);
-    if (!slim.error && slim.data) {
-      return mapSamples(slim.data);
-    }
-    last = slim.error?.message ?? last;
-    const minimal = await client
-      .from(name)
-      .select("id,sample_no,sample_code,job_id,matrix_id,status,received_at,created_at");
-    if (!minimal.error && minimal.data) {
-      return mapSamples(minimal.data);
-    }
-    last = minimal.error?.message ?? last;
   }
   try {
     const table = await resolveTable(client, "samples", TABLE_CANDIDATES.samples);
-    const { data, error } = await client.from(table).select("*");
+    const columns = SAMPLE_COLUMNS.split(",").filter((col) => !FORBIDDEN_COLUMNS.has(col));
+    const { data, error } = await client.from(table).select(columns.join(","));
     if (error) throw new Error(error.message);
     return mapSamples(data);
   } catch (error) {

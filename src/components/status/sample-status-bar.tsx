@@ -54,7 +54,7 @@ export function SampleStatusBar({
           </li>
         ))}
       </ol>
-      <div className="flex flex-wrap gap-2">
+      <div className="flex flex-wrap gap-2" data-legal-actions={actions.map((a) => a.key).join(",")}>
         {actions.length === 0 ? (
           <p className="text-xs text-[#5d7266]">Tidak ada aksi yang diizinkan untuk peran dan status ini.</p>
         ) : (

@@ -199,7 +199,11 @@ function allSampleActions(sample: Sample, actor: SessionUser | null): SampleGate
   ];
 }
 
-/** Product lock: hide illegal actions (do not render them disabled). */
+/**
+ * Product lock: hide illegal actions (do not render them disabled).
+ * Ship 004 Budi verifier + pending_verify → Verifikasi, Tolak only.
+ * Ship 002 Andri sampler + expected → Edit, Arsipkan only.
+ */
 export function sampleActionsFor(sample: Sample, actor: SessionUser | null): SampleGatedAction[] {
   return allSampleActions(sample, actor).filter((action) => action.allowed);
 }

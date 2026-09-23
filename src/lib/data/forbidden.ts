@@ -1,0 +1,34 @@
+/** Backend schema facts — do not query these. */
+export const FORBIDDEN_TABLES = new Set(["units", "unit"]);
+
+/** Does not exist as column or view on samples (use sample_code). */
+export const FORBIDDEN_COLUMNS = new Set(["client_code"]);
+
+export function isForbiddenTable(name: string) {
+  return FORBIDDEN_TABLES.has(name);
+}
+
+export function stripForbiddenColumns(payload: Record<string, unknown>) {
+  const next: Record<string, unknown> = {};
+  for (const [key, value] of Object.entries(payload)) {
+    if (FORBIDDEN_COLUMNS.has(key)) continue;
+    next[key] = value;
+  }
+  return next;
+}
+
+export function missingColumnName(message: string): string | null {
+  const match =
+    message.match(/['"]([a-zA-Z0-9_]+)['"] column/i) ||
+    message.match(/column ['"]([a-zA-Z0-9_]+)['"]/i);
+  return match?.[1] ?? null;
+}
+
+export function isMissingColumnError(message: string) {
+  return /PGRST204|['"][a-zA-Z0-9_]+['"] column/i.test(message);
+}
+
+export function isMissingTableError(message: string) {
+  if (isMissingColumnError(message) && /column/i.test(message)) return false;
+  return /does not exist|PGRST205|Could not find the table|relation .* does not exist/i.test(message);
+}
