@@ -8,6 +8,7 @@ import {
 } from "@/lib/data/master-schema";
 import { JOB_SELECT } from "@/lib/data/jobs-schema";
 import { SAMPLE_SELECT } from "@/lib/data/samples-schema";
+import { CONTACT_SELECT, CUSTOMER_SELECT } from "@/lib/data/customers-schema";
 import { SITE_SELECT } from "@/lib/data/sites-schema";
 import { omitEmptyUuidFields } from "@/lib/data/uuid";
 
@@ -15,6 +16,8 @@ export { SAMPLE_SELECT } from "@/lib/data/samples-schema";
 
 const SELECT_BY_KEY: Partial<Record<keyof typeof TABLE_CANDIDATES, string>> = {
   jobs: JOB_SELECT,
+  customers: CUSTOMER_SELECT,
+  contacts: CONTACT_SELECT,
   sites: SITE_SELECT,
   samples: SAMPLE_SELECT,
   matrices: MATRIX_SELECT,
@@ -28,6 +31,7 @@ export const TABLE_CANDIDATES = {
   profiles: ["profiles"],
   customers: ["customers"],
   sites: ["customer_sites"],
+  contacts: ["contacts"],
   matrices: ["matrices"],
   parameters: ["parameters"],
   methods: ["methods"],
@@ -61,6 +65,8 @@ function dropColumn(payload: Record<string, unknown>, column: string) {
   delete next[column];
   return next;
 }
+
+const NO_CLIENT_DELETE = new Set(["customers", "sites", "contacts", "audit"]);
 
 function assertClientWritable(key: keyof typeof TABLE_CANDIDATES) {
   if (key === "audit") {
@@ -126,6 +132,9 @@ export async function deleteWhere(
   value: string,
 ) {
   assertClientWritable(key);
+  if (NO_CLIENT_DELETE.has(key)) {
+    throw new Error("Hard-delete customer/site/contact dari klien dilarang.");
+  }
   const table = resolveTable(key);
   const { error } = await client.from(table).delete().eq(column, value);
   if (error) throw new Error(error.message);

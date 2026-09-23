@@ -5,6 +5,7 @@ import {
   asMethods,
   asParameters,
   mapAudit,
+  mapContacts,
   mapCustomers,
   mapInvoices,
   mapJobs,
@@ -17,6 +18,7 @@ import {
   unitsFromParameters,
 } from "@/lib/data/mappers";
 import { SAMPLE_SELECT, selectAll } from "@/lib/data/tables";
+import { withPrimaryPic } from "@/lib/domain/customers";
 import type { LimsData, Sample } from "@/lib/domain/types";
 
 async function safe<T>(fn: () => Promise<T>, fallback: T): Promise<{ value: T; error?: string }> {
@@ -44,12 +46,15 @@ export async function loadLiveData(client: SupabaseClient): Promise<{ data: Lims
   const parameters = await take("parameters", asParameters, []);
   const samplesResult = await safe(() => loadSamples(client), []);
   if (samplesResult.error) errors.push(`samples: ${samplesResult.error}`);
+  const contacts = await take("contacts", mapContacts, []);
+  const customers = withPrimaryPic(await take("customers", mapCustomers, []), contacts);
 
   const data: LimsData = {
     ...EMPTY_DATA,
     profiles: await take("profiles", mapProfiles, []),
-    customers: await take("customers", mapCustomers, []),
+    customers,
     sites: await take("sites", mapSites, []),
+    contacts,
     matrices: await take("matrices", asMatrices, []),
     parameters,
     methods: await take("methods", asMethods, []),

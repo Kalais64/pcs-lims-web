@@ -1,10 +1,13 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { nextInvoiceNo, nextJobNo, nextLhuNo, nextSampleNo, nowIso, uid } from "@/lib/domain/ids";
+import { nextCustomerCode, nextInvoiceNo, nextJobNo, nextLhuNo, nextSampleNo, nowIso, uid } from "@/lib/domain/ids";
 import type {
   AuditLog,
+  Contact,
+  ContactDraft,
   Customer,
+  CustomerDraft,
   CustomerSite,
   Invoice,
   Job,
@@ -16,6 +19,7 @@ import type {
   JobFreeFields,
   SampleFreeFields,
   SamplingEvent,
+  SiteDraft,
   TestResult,
 } from "@/lib/domain/types";
 import type { SessionUser } from "@/lib/auth/types";
@@ -93,32 +97,175 @@ export function FixtureLimsProvider({ children }: { children: React.ReactNode })
     window.localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
   }, []);
 
-  const upsertCustomer = useCallback((input: Omit<Customer, "id"> & { id?: string }) => {
-    const id = input.id ?? uid("c");
+  const createCustomer = useCallback((input: CustomerDraft): ActionResult => {
+    const name = input.name.trim();
+    if (!name) return { ok: false, message: "Nama perusahaan wajib diisi." };
+    let createdId = "";
+    let message = "";
     setData((prev) => {
-      const exists = prev.customers.some((c) => c.id === id);
-      const row = { ...input, id };
+      const nextCode = (input.code?.trim() || nextCustomerCode(prev.customers.map((c) => c.code))).toUpperCase();
+      if (prev.customers.some((c) => c.code.toUpperCase() === nextCode)) {
+        message = "Kode customer sudah dipakai.";
+        return prev;
+      }
+      const id = uid("c");
+      createdId = id;
+      const now = nowIso();
+      const row: Customer = {
+        id,
+        code: nextCode,
+        companyName: name,
+        pic: "",
+        email: input.email?.trim() ?? "",
+        phone: input.phone?.trim() ?? "",
+        address: input.billingAddress?.trim() ?? "",
+        npwp: input.npwp?.trim() ?? "",
+        notes: input.notes?.trim() ?? "",
+        isActive: true,
+        createdAt: now,
+        updatedAt: now,
+      };
       return {
         ...prev,
-        customers: exists
-          ? prev.customers.map((c) => (c.id === id ? row : c))
-          : [...prev.customers, row],
+        customers: [...prev.customers, row],
+        auditLogs: [
+          ...prev.auditLogs,
+          fixtureAudit("", "INSERT", "customers", id, null, { code: nextCode, name }),
+        ],
       };
     });
-    return id;
+    return message ? { ok: false, message } : { ok: true, id: createdId };
   }, []);
 
-  const upsertSite = useCallback((input: Omit<CustomerSite, "id"> & { id?: string }) => {
+  const updateCustomer = useCallback((id: string, input: CustomerDraft): ActionResult => {
+    let message = "";
+    setData((prev) => {
+      const current = prev.customers.find((c) => c.id === id);
+      if (!current) {
+        message = "Customer tidak ditemukan.";
+        return prev;
+      }
+      if (!current.isActive) {
+        message = "Customer nonaktif hanya bisa diaktifkan kembali.";
+        return prev;
+      }
+      const name = input.name.trim();
+      if (!name) {
+        message = "Nama perusahaan wajib diisi.";
+        return prev;
+      }
+      const next: Customer = {
+        ...current,
+        companyName: name,
+        email: input.email?.trim() ?? "",
+        phone: input.phone?.trim() ?? "",
+        address: input.billingAddress?.trim() ?? "",
+        npwp: input.npwp?.trim() ?? "",
+        notes: input.notes?.trim() ?? "",
+        updatedAt: nowIso(),
+      };
+      return {
+        ...prev,
+        customers: prev.customers.map((c) => (c.id === id ? next : c)),
+        auditLogs: [
+          ...prev.auditLogs,
+          fixtureAudit("", "UPDATE", "customers", id, { name: current.companyName }, { name }),
+        ],
+      };
+    });
+    return message ? { ok: false, message } : { ok: true, id };
+  }, []);
+
+  const setCustomerActive = useCallback((id: string, isActive: boolean): ActionResult => {
+    let message = "";
+    setData((prev) => {
+      const current = prev.customers.find((c) => c.id === id);
+      if (!current) {
+        message = "Customer tidak ditemukan.";
+        return prev;
+      }
+      return {
+        ...prev,
+        customers: prev.customers.map((c) =>
+          c.id === id ? { ...c, isActive, updatedAt: nowIso() } : c,
+        ),
+        auditLogs: [
+          ...prev.auditLogs,
+          fixtureAudit("", "UPDATE", "customers", id, { is_active: current.isActive }, { is_active: isActive }),
+        ],
+      };
+    });
+    return message ? { ok: false, message } : { ok: true, id };
+  }, []);
+
+  const saveSite = useCallback((input: SiteDraft): ActionResult => {
+    const customerId = input.customerId.trim();
+    if (!customerId) return { ok: false, message: "Site wajib terkait customer." };
+    const name = input.name.trim();
+    if (!name) return { ok: false, message: "Nama site wajib diisi." };
     const id = input.id ?? uid("site");
     setData((prev) => {
+      const row: CustomerSite = {
+        id,
+        customerId,
+        name,
+        address: input.address?.trim() ?? "",
+        city: input.city?.trim() ?? "",
+        province: input.province?.trim() ?? "",
+        latitude: input.latitude?.trim() ?? "",
+        longitude: input.longitude?.trim() ?? "",
+      };
       const exists = prev.sites.some((s) => s.id === id);
-      const row = { ...input, id };
       return {
         ...prev,
         sites: exists ? prev.sites.map((s) => (s.id === id ? row : s)) : [...prev.sites, row],
+        auditLogs: [
+          ...prev.auditLogs,
+          fixtureAudit("", exists ? "UPDATE" : "INSERT", "customer_sites", id, null, { name, customer_id: customerId }),
+        ],
       };
     });
-    return id;
+    return { ok: true, id };
+  }, []);
+
+  const saveContact = useCallback((input: ContactDraft): ActionResult => {
+    const customerId = input.customerId.trim();
+    if (!customerId) return { ok: false, message: "Kontak wajib terkait customer." };
+    const fullName = input.fullName.trim();
+    if (!fullName) return { ok: false, message: "Nama kontak wajib diisi." };
+    const id = input.id ?? uid("ct");
+    setData((prev) => {
+      const now = nowIso();
+      const row: Contact = {
+        id,
+        customerId,
+        fullName,
+        title: input.title?.trim() ?? "",
+        phone: input.phone?.trim() ?? "",
+        email: input.email?.trim() ?? "",
+        isPrimary: Boolean(input.isPrimary),
+        createdAt: now,
+        updatedAt: now,
+      };
+      const exists = prev.contacts.some((c) => c.id === id);
+      const contacts = (exists ? prev.contacts.map((c) => (c.id === id ? row : c)) : [...prev.contacts, row]).map(
+        (c) =>
+          input.isPrimary && c.customerId === customerId && c.id !== id ? { ...c, isPrimary: false } : c,
+      );
+      const primary = contacts.find((c) => c.customerId === customerId && c.isPrimary);
+      return {
+        ...prev,
+        contacts,
+        customers: prev.customers.map((c) =>
+          c.id === customerId ? { ...c, pic: primary?.fullName ?? c.pic } : c,
+        ),
+        auditLogs: [
+          ...prev.auditLogs,
+          fixtureAudit("", exists ? "UPDATE" : "INSERT", "contacts", id, null, { full_name: fullName }),
+        ],
+      };
+    });
+    return { ok: true, id };
   }, []);
 
   const createJob = useCallback((input: Omit<Job, "id" | "jobNo" | "status" | "createdAt">) => {
@@ -764,8 +911,11 @@ export function FixtureLimsProvider({ children }: { children: React.ReactNode })
       loadError: null,
       refresh: async () => undefined,
       resetDemo,
-      upsertCustomer,
-      upsertSite,
+      createCustomer,
+      updateCustomer,
+      setCustomerActive,
+      saveSite,
+      saveContact,
       createJob,
       scheduleJob,
       updateJobFields,
@@ -791,8 +941,11 @@ export function FixtureLimsProvider({ children }: { children: React.ReactNode })
     [
       data,
       resetDemo,
-      upsertCustomer,
-      upsertSite,
+      createCustomer,
+      updateCustomer,
+      setCustomerActive,
+      saveSite,
+      saveContact,
       createJob,
       scheduleJob,
       updateJobFields,

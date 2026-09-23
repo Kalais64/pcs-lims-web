@@ -1,6 +1,7 @@
 import { ROLES, type Role } from "@/lib/auth/types";
 import type {
   AuditLog,
+  Contact,
   Customer,
   CustomerSite,
   Invoice,
@@ -40,14 +41,26 @@ export function mapProfiles(data: unknown): StaffProfile[] {
 }
 
 export function mapCustomers(data: unknown): Customer[] {
-  return asRows(data).map((row) => ({
-    id: pickString(row, ["id"]),
-    companyName: pickString(row, ["company_name", "name", "legal_name"]),
-    pic: pickString(row, ["pic", "pic_name", "contact_name", "hse_name"]),
-    email: pickString(row, ["email", "pic_email"]),
-    phone: pickString(row, ["phone", "pic_phone", "telephone"]),
-    address: pickString(row, ["address", "company_address"]),
-  }));
+  return asRows(data)
+    .map((row) => {
+      const name = pickString(row, ["name", "company_name", "legal_name"]);
+      const billing = pickString(row, ["billing_address", "address", "company_address"]);
+      return {
+        id: pickString(row, ["id"]),
+        code: pickString(row, ["code"]),
+        companyName: name,
+        pic: pickString(row, ["pic", "pic_name", "contact_name", "hse_name"]),
+        email: pickString(row, ["email"]),
+        phone: pickString(row, ["phone", "telephone"]),
+        address: billing,
+        npwp: pickString(row, ["npwp"]),
+        notes: pickString(row, ["notes"]),
+        isActive: pickBool(row, ["is_active"], true),
+        createdAt: pickString(row, ["created_at"]),
+        updatedAt: pickString(row, ["updated_at"]),
+      };
+    })
+    .filter((row) => row.id);
 }
 
 export function mapSites(data: unknown): CustomerSite[] {
@@ -57,6 +70,26 @@ export function mapSites(data: unknown): CustomerSite[] {
       customerId: pickString(row, ["customer_id"]),
       name: pickString(row, ["name", "site_name"]),
       address: pickString(row, ["address", "site_address"]),
+      city: pickString(row, ["city"]),
+      province: pickString(row, ["province"]),
+      latitude: pickString(row, ["latitude"]),
+      longitude: pickString(row, ["longitude"]),
+    }))
+    .filter((row) => row.id && row.customerId);
+}
+
+export function mapContacts(data: unknown): Contact[] {
+  return asRows(data)
+    .map((row) => ({
+      id: pickString(row, ["id"]),
+      customerId: pickString(row, ["customer_id"]),
+      fullName: pickString(row, ["full_name", "name"]),
+      title: pickString(row, ["title"]),
+      phone: pickString(row, ["phone"]),
+      email: pickString(row, ["email"]),
+      isPrimary: pickBool(row, ["is_primary"], false),
+      createdAt: pickString(row, ["created_at"]),
+      updatedAt: pickString(row, ["updated_at"]),
     }))
     .filter((row) => row.id && row.customerId);
 }

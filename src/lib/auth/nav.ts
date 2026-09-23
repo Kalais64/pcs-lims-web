@@ -28,7 +28,7 @@ export const NAV_ITEMS: readonly NavItem[] = [
     href: "/customers",
     label: "Customer",
     icon: "◉",
-    roles: ["admin", "sales"],
+    roles: ALL_ROLES,
   },
   {
     href: "/quotations",
