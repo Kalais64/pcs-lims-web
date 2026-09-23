@@ -55,30 +55,32 @@ export function SampleStatusBar({
         ))}
       </ol>
       <div className="flex flex-wrap gap-2">
-        {actions.map((action) => (
-          <div key={action.key} className="max-w-[220px]">
-            <Button
-              type="button"
-              size="sm"
-              disabled={!action.allowed || busy}
-              variant={action.key === "reject" || action.key === "archive" ? "destructive" : "outline"}
-              className={
-                action.allowed && action.key !== "reject" && action.key !== "archive"
-                  ? "border-[#16A34A] bg-[#16A34A] text-white hover:bg-[#14532D]"
-                  : undefined
-              }
-              title={action.reason ?? undefined}
-              onClick={() => onAction(action)}
-            >
-              {action.label}
-            </Button>
-            {!action.allowed && action.reason ? (
-              <p className="mt-1 text-[11px] leading-snug text-[#5d7266]">{action.reason}</p>
-            ) : action.override ? (
-              <p className="mt-1 text-[11px] leading-snug text-[#8a6500]">{action.reason}</p>
-            ) : null}
-          </div>
-        ))}
+        {actions.length === 0 ? (
+          <p className="text-xs text-[#5d7266]">Tidak ada aksi yang diizinkan untuk peran dan status ini.</p>
+        ) : (
+          actions.map((action) => (
+            <div key={action.key} className="max-w-[220px]">
+              <Button
+                type="button"
+                size="sm"
+                disabled={busy}
+                variant={action.key === "reject" || action.key === "archive" ? "destructive" : "outline"}
+                className={
+                  action.key !== "reject" && action.key !== "archive"
+                    ? "border-[#16A34A] bg-[#16A34A] text-white hover:bg-[#14532D]"
+                    : undefined
+                }
+                title={action.reason ?? undefined}
+                onClick={() => onAction(action)}
+              >
+                {action.label}
+              </Button>
+              {action.override && action.reason ? (
+                <p className="mt-1 text-[11px] leading-snug text-[#8a6500]">{action.reason}</p>
+              ) : null}
+            </div>
+          ))
+        )}
       </div>
     </div>
   );

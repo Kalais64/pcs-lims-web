@@ -33,7 +33,6 @@ const SAMPLE_COLUMNS = [
   "sample_no",
   "sample_number",
   "sample_code",
-  "client_code",
   "code",
   "job_id",
   "matrix_id",
@@ -68,6 +67,13 @@ async function loadSamples(client: SupabaseClient): Promise<Sample[]> {
       return mapSamples(slim.data);
     }
     last = slim.error?.message ?? last;
+    const minimal = await client
+      .from(name)
+      .select("id,sample_no,sample_code,job_id,matrix_id,status,received_at,created_at");
+    if (!minimal.error && minimal.data) {
+      return mapSamples(minimal.data);
+    }
+    last = minimal.error?.message ?? last;
   }
   try {
     const table = await resolveTable(client, "samples", TABLE_CANDIDATES.samples);

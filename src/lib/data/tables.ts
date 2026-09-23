@@ -11,6 +11,7 @@ export async function resolveTable(client: SupabaseClient, key: string, names: s
   if (hit) return hit;
   let last = "";
   for (const name of names) {
+    if (name === "units") continue;
     const { error } = await client.from(name).select("*").limit(1);
     if (!error) {
       cache.set(key, name);
@@ -38,7 +39,9 @@ export const TABLE_CANDIDATES = {
   lhu: ["lhu_documents", "lhu_records"],
   invoices: ["invoices"],
   audit: ["audit_logs"],
-};
+} as const;
+
+/** Backend has no units table — satuan lives on parameters.unit / satuan / default_unit. */
 
 export async function selectAll(client: SupabaseClient, key: keyof typeof TABLE_CANDIDATES) {
   const table = await resolveTable(client, key, TABLE_CANDIDATES[key]);

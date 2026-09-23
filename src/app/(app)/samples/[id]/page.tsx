@@ -21,21 +21,7 @@ import { useAuth } from "@/lib/hooks/use-auth";
 import { canFreeEditSample, criticalFieldsLocked, submitTarget } from "@/lib/status/sample-gate";
 import { staffName, useLims } from "@/lib/store/lims-provider";
 import type { ActionResult } from "@/lib/store/context";
-
-function toLocalInput(iso: string | null) {
-  if (!iso) return "";
-  const d = new Date(iso);
-  if (Number.isNaN(d.getTime())) return "";
-  const pad = (n: number) => String(n).padStart(2, "0");
-  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
-}
-
-function fromLocalInput(value: string): string | null {
-  if (!value) return null;
-  const d = new Date(value);
-  if (Number.isNaN(d.getTime())) return null;
-  return d.toISOString();
-}
+import { fromLocalInput, toLocalInput } from "@/lib/datetime";
 
 export default function SampleDetailPage() {
   const params = useParams<{ id: string }>();

@@ -28,5 +28,6 @@ export function asRows(data: unknown): Record<string, unknown>[] {
 }
 
 export function dateOnly(value: string) {
+  if (!value) return "";
   return value.slice(0, 10);
 }

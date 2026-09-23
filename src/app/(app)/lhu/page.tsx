@@ -20,6 +20,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { formatDateTimeId } from "@/lib/datetime";
 import { useAuth } from "@/lib/hooks/use-auth";
 import { LHU_STATUSES, LHU_STATUS_LABELS } from "@/lib/status/lhu";
 import { staffName, useLims } from "@/lib/store/lims-provider";
@@ -86,7 +87,7 @@ export default function LhuPage() {
                     <TableCell>{l.revision}</TableCell>
                     <TableCell>{issuerName}</TableCell>
                     <TableCell>
-                      {l.issuedAt ? new Date(l.issuedAt).toLocaleString("id-ID") : "—"}
+                      {formatDateTimeId(l.issuedAt)}
                     </TableCell>
                     <TableCell>
                       <StatusBadge entity="lhu" status={l.status} />

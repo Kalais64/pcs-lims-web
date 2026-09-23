@@ -36,7 +36,7 @@ function sampleFieldPayloads(fields: SampleFreeFields): Record<string, unknown>[
   return [
     base,
     { ...base, condition_notes: fields.receiveNotes },
-    { ...base, client_code: fields.sampleCode, sampled_at: fields.collectedAt, location: fields.storageLocation },
+    { ...base, sampled_at: fields.collectedAt, location: fields.storageLocation },
   ];
 }
 
@@ -354,8 +354,8 @@ export function LiveLimsProvider({
               sample_id: sampleId,
               parameter_id: row.parameterId,
               method_id: row.methodId,
-              unit_id: row.unitId,
               unit: row.unitId,
+              satuan: row.unitId,
               result: row.result,
               value: row.result,
               analyst_id: analystId,

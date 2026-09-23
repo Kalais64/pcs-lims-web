@@ -114,7 +114,7 @@ export function mapSamples(data: unknown): Sample[] {
   return asRows(data)
     .map((row) => {
       const sampleNo = pickString(row, ["sample_no", "sample_number", "code", "number", "sample_id"]);
-      const sampleCode = pickString(row, ["sample_code", "client_code", "customer_code"]);
+      const sampleCode = pickString(row, ["sample_code", "customer_code", "code"]);
       const id = pickString(row, ["id", "sample_id"], sampleNo);
       const receiveNotes = pickString(row, ["receive_notes", "condition_notes"]);
       return {
