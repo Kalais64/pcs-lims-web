@@ -42,6 +42,41 @@ function blockedBuilder() {
   return builder;
 }
 
+const AUDIT_WRITE = new Set(["insert", "update", "upsert", "delete"]);
+
+function appendOnlyAudit(builder: object) {
+  const result = {
+    data: null,
+    error: { message: "audit_logs append-only", code: "AUDIT_APPEND_ONLY" },
+  };
+  return new Proxy(builder, {
+    get(target, prop, receiver) {
+      if (typeof prop === "string" && AUDIT_WRITE.has(prop)) {
+        const blocked: Record<string, unknown> = {};
+        const chain = () => blocked;
+        for (const method of [
+          "select",
+          "eq",
+          "neq",
+          "in",
+          "limit",
+          "maybeSingle",
+          "single",
+          "filter",
+          "match",
+        ]) {
+          blocked[method] = chain;
+        }
+        blocked.then = (resolve: (value: typeof result) => unknown) =>
+          Promise.resolve(result).then(resolve);
+        return () => blocked;
+      }
+      const value = Reflect.get(target, prop, receiver);
+      return typeof value === "function" ? (value as (...args: unknown[]) => unknown).bind(target) : value;
+    },
+  });
+}
+
 /** Never issue HTTP to units / lab_samples / sample_records. */
 export function guardSupabase<T extends SupabaseClient>(client: T): T {
   return new Proxy(client, {
@@ -51,7 +86,11 @@ export function guardSupabase<T extends SupabaseClient>(client: T): T {
           if (isForbiddenTable(relation)) {
             return blockedBuilder();
           }
-          return target.from(relation);
+          const next = target.from(relation);
+          if (relation === "audit_logs") {
+            return appendOnlyAudit(next);
+          }
+          return next;
         };
       }
       const value = Reflect.get(target, prop, receiver);

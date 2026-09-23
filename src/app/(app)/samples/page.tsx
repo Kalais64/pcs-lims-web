@@ -27,6 +27,7 @@ import {
 import { useAuth } from "@/lib/hooks/use-auth";
 import { SAMPLE_STATUSES, SAMPLE_STATUS_LABELS } from "@/lib/status/sample";
 import { useLims } from "@/lib/store/lims-provider";
+import { firstActiveId, optionsForForm } from "@/lib/domain/masters";
 import { formatDateTimeId, safeIso } from "@/lib/datetime";
 
 export default function SamplesPage() {
@@ -39,7 +40,7 @@ export default function SamplesPage() {
   const [error, setError] = useState<string | null>(null);
   const [createForm, setCreateForm] = useState({
     jobId: data.jobs[0]?.id ?? "",
-    matrixId: data.jobs[0]?.matrixId ?? data.matrices[0]?.id ?? "",
+    matrixId: data.jobs[0]?.matrixId ?? firstActiveId(data.matrices),
   });
   const [receive, setReceive] = useState<Record<string, { at: string; notes: string }>>({});
   const [nowLocal, setNowLocal] = useState("");
@@ -242,7 +243,7 @@ export default function SamplesPage() {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  {data.matrices.map((m) => (
+                  {optionsForForm(data.matrices, [createForm.matrixId]).map((m) => (
                     <SelectItem key={m.id} value={m.id}>
                       {m.name}
                     </SelectItem>

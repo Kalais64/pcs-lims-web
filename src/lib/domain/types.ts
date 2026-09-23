@@ -28,9 +28,32 @@ export type CustomerSite = {
   address: string;
 };
 
-export type Matrix = { id: string; name: string };
-export type Parameter = { id: string; name: string; unit?: string };
-export type Method = { id: string; name: string };
+export type Matrix = {
+  id: string;
+  code: string;
+  name: string;
+  description: string;
+  isActive: boolean;
+};
+export type Parameter = {
+  id: string;
+  code: string;
+  name: string;
+  unit?: string;
+  methodId: string;
+  matrixId: string;
+  loq: string;
+  bakuMutu: string;
+  isActive: boolean;
+};
+export type Method = {
+  id: string;
+  code: string;
+  name: string;
+  standardRef: string;
+  description: string;
+  isActive: boolean;
+};
 export type Unit = { id: string; name: string };
 
 export type Job = {
@@ -115,14 +138,13 @@ export type Invoice = {
 
 export type AuditLog = {
   id: string;
+  occurredAt: string;
   actorId: string;
-  entityType: "job" | "sample" | "lhu" | "invoice";
-  entityId: string;
-  fromStatus: string;
-  toStatus: string;
-  override: boolean;
-  reason: string | null;
-  createdAt: string;
+  action: string;
+  tableName: string;
+  rowId: string;
+  oldData: Record<string, unknown> | null;
+  newData: Record<string, unknown> | null;
 };
 
 export type LimsData = {

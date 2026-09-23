@@ -15,12 +15,48 @@ import { nextInvoiceNo, nextJobNo, nextLhuNo, nextSampleNo, nowIso } from "@/lib
 import type { Invoice, LimsData, SampleFreeFields, SamplingEvent } from "@/lib/domain/types";
 import { createBrowserSupabase } from "@/lib/supabase/browser";
 import { deriveJobStatus } from "@/lib/store/sync-job";
-import { LimsContext, type ActionResult, type LimsContextValue } from "@/lib/store/context";
+import { LimsContext, type ActionResult, type LimsContextValue, type MasterInput, type MasterKind } from "@/lib/store/context";
 import type { RuntimeMode } from "@/lib/config/runtime";
 import { canFreeEditSample, SAMPLE_ARCHIVE_STATUSES, submitTarget } from "@/lib/status/sample-gate";
 
 function fail(message: string): ActionResult {
   return { ok: false, message };
+}
+
+function optionalNumber(value?: string): number | string | null {
+  if (value == null || !value.trim()) return null;
+  const n = Number(value);
+  return Number.isFinite(n) ? n : value;
+}
+
+function masterPayload(kind: MasterKind, item: MasterInput): Record<string, unknown> {
+  if (kind === "matrices") {
+    return {
+      code: item.code.trim(),
+      name: item.name.trim(),
+      description: item.description?.trim() || null,
+      is_active: item.isActive ?? true,
+    };
+  }
+  if (kind === "methods") {
+    return {
+      code: item.code.trim(),
+      name: item.name.trim(),
+      standard_ref: item.standardRef?.trim() || null,
+      description: item.description?.trim() || null,
+      is_active: item.isActive ?? true,
+    };
+  }
+  return {
+    code: item.code.trim(),
+    name: item.name.trim(),
+    unit: item.unit?.trim() || null,
+    method_id: item.methodId || null,
+    matrix_id: item.matrixId || null,
+    loq: optionalNumber(item.loq),
+    baku_mutu: optionalNumber(item.bakuMutu),
+    is_active: item.isActive ?? true,
+  };
 }
 
 function sampleFieldPayloads(fields: SampleFreeFields): Record<string, unknown>[] {
@@ -481,17 +517,28 @@ export function LiveLimsProvider({
     [refresh, withClient],
   );
 
-  const upsertMaster: LimsContextValue["upsertMaster"] = useCallback(
-    (kind, item) => {
-      if (kind === "units") return;
-      const key =
-        kind === "matrices" ? "matrices" : kind === "parameters" ? "parameters" : "methods";
-      void withClient(async (client) => {
-        await insertRow(client, key, [{ name: item.name }]);
+  const saveMaster: LimsContextValue["saveMaster"] = useCallback(
+    (kind, item) =>
+      withClient(async (client) => {
+        const payload = masterPayload(kind, item);
+        if (item.id) {
+          await updateRow(client, kind, item.id, [payload]);
+        } else {
+          await insertRow(client, kind, [payload]);
+        }
         await refresh();
         return { ok: true };
-      });
-    },
+      }),
+    [refresh, withClient],
+  );
+
+  const setMasterActive: LimsContextValue["setMasterActive"] = useCallback(
+    (kind, id, isActive) =>
+      withClient(async (client) => {
+        await updateRow(client, kind, id, [{ is_active: isActive }]);
+        await refresh();
+        return { ok: true };
+      }),
     [refresh, withClient],
   );
 
@@ -522,7 +569,8 @@ export function LiveLimsProvider({
       issueLhu,
       createInvoice,
       markInvoice,
-      upsertMaster,
+      saveMaster,
+      setMasterActive,
     }),
     [
       data,
@@ -549,7 +597,8 @@ export function LiveLimsProvider({
       issueLhu,
       createInvoice,
       markInvoice,
-      upsertMaster,
+      saveMaster,
+      setMasterActive,
     ],
   );
 

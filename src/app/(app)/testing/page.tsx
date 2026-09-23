@@ -20,6 +20,7 @@ import {
 import { useAuth } from "@/lib/hooks/use-auth";
 import { nowIso } from "@/lib/domain/ids";
 import { submitTarget } from "@/lib/status/sample-gate";
+import { firstActiveId, optionsForForm } from "@/lib/domain/masters";
 import { useLims } from "@/lib/store/lims-provider";
 
 type Row = {
@@ -53,9 +54,11 @@ export default function TestingPage() {
         result: r.result,
       }));
     }
-    return data.parameters.slice(0, 4).map((p, i) => ({
+    const activeParams = optionsForForm(data.parameters);
+    const activeMethods = optionsForForm(data.methods);
+    return activeParams.slice(0, 4).map((p, i) => ({
       parameterId: p.id,
-      methodId: data.methods[i]?.id ?? data.methods[0]?.id ?? "",
+      methodId: p.methodId || activeMethods[i]?.id || firstActiveId(data.methods),
       unitId: p.unit || data.units[0]?.id || "",
       result: "",
     }));
@@ -76,12 +79,14 @@ export default function TestingPage() {
       );
     } else {
       setRows(
-        data.parameters.slice(0, 4).map((p, i) => ({
-          parameterId: p.id,
-          methodId: data.methods[i]?.id ?? data.methods[0]?.id ?? "",
-          unitId: p.unit || data.units[0]?.id || "",
-          result: "",
-        })),
+        optionsForForm(data.parameters)
+          .slice(0, 4)
+          .map((p, i) => ({
+            parameterId: p.id,
+            methodId: p.methodId || optionsForForm(data.methods)[i]?.id || firstActiveId(data.methods),
+            unitId: p.unit || data.units[0]?.id || "",
+            result: "",
+          })),
       );
     }
   }
@@ -186,7 +191,7 @@ export default function TestingPage() {
                   <SelectValue placeholder="Parameter" />
                 </SelectTrigger>
                 <SelectContent>
-                  {data.parameters.map((p) => (
+                  {optionsForForm(data.parameters, [row.parameterId]).map((p) => (
                     <SelectItem key={p.id} value={p.id}>
                       {p.name}
                     </SelectItem>
@@ -203,7 +208,7 @@ export default function TestingPage() {
                   <SelectValue placeholder="Metode" />
                 </SelectTrigger>
                 <SelectContent>
-                  {data.methods.map((m) => (
+                  {optionsForForm(data.methods, [row.methodId]).map((m) => (
                     <SelectItem key={m.id} value={m.id}>
                       {m.name}
                     </SelectItem>
@@ -227,11 +232,19 @@ export default function TestingPage() {
                   <SelectValue placeholder="Satuan" />
                 </SelectTrigger>
                 <SelectContent>
-                  {data.units.map((u) => (
-                    <SelectItem key={u.id} value={u.id}>
-                      {u.name}
-                    </SelectItem>
-                  ))}
+                  {data.units
+                    .filter(
+                      (u) =>
+                        u.id === row.unitId ||
+                        optionsForForm(data.parameters).some(
+                          (p) => p.unit === u.name || p.unit === u.id,
+                        ),
+                    )
+                    .map((u) => (
+                      <SelectItem key={u.id} value={u.id}>
+                        {u.name}
+                      </SelectItem>
+                    ))}
                 </SelectContent>
               </Select>
             </div>
@@ -243,9 +256,9 @@ export default function TestingPage() {
               setRows([
                 ...rows,
                 {
-                  parameterId: data.parameters[0]?.id ?? "",
-                  methodId: data.methods[0]?.id ?? "",
-                  unitId: data.units[0]?.id ?? "",
+                  parameterId: firstActiveId(data.parameters),
+                  methodId: firstActiveId(data.methods),
+                  unitId: optionsForForm(data.parameters)[0]?.unit || data.units[0]?.id || "",
                   result: "",
                 },
               ])

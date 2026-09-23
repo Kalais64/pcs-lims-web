@@ -6,12 +6,12 @@ import type {
   Invoice,
   Job,
   LimsData,
+  Matrix,
   Method,
   Parameter,
   SampleFreeFields,
   SamplingEvent,
   TestResult,
-  Unit,
 } from "@/lib/domain/types";
 import type { SessionUser } from "@/lib/auth/types";
 
@@ -51,10 +51,17 @@ export type LimsContextValue = {
   issueLhu: (jobId: string, actor: SessionUser) => ActionResult | Promise<ActionResult>;
   createInvoice: (jobId: string, amount: number) => ActionResult | Promise<ActionResult>;
   markInvoice: (id: string, status: Invoice["status"]) => ActionResult | Promise<ActionResult>;
-  upsertMaster: (
-    kind: "matrices" | "parameters" | "methods" | "units",
-    item: { id?: string; name: string },
-  ) => void;
+  saveMaster: (
+    kind: MasterKind,
+    item: MasterInput,
+    actorId?: string,
+  ) => ActionResult | Promise<ActionResult>;
+  setMasterActive: (
+    kind: MasterKind,
+    id: string,
+    isActive: boolean,
+    actorId?: string,
+  ) => ActionResult | Promise<ActionResult>;
 };
 
 export const LimsContext = createContext<LimsContextValue | null>(null);
@@ -70,5 +77,20 @@ export function staffName(data: LimsData, id: string | null) {
   return data.profiles.find((p) => p.id === id)?.name ?? id;
 }
 
-export type MasterKind = "matrices" | "parameters" | "methods" | "units";
-export type MasterRow = Parameter | Method | Unit | { id: string; name: string };
+export type MasterKind = "matrices" | "parameters" | "methods";
+
+export type MasterInput = {
+  id?: string;
+  code: string;
+  name: string;
+  description?: string;
+  standardRef?: string;
+  unit?: string;
+  methodId?: string;
+  matrixId?: string;
+  loq?: string;
+  bakuMutu?: string;
+  isActive?: boolean;
+};
+
+export type MasterRow = Matrix | Parameter | Method;

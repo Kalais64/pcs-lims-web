@@ -13,6 +13,8 @@ export async function middleware(request: NextRequest) {
     "/customer/": "/customers",
     "/invoice": "/invoices",
     "/invoice/": "/invoices",
+    "/master": "/admin",
+    "/master/": "/admin",
   };
   if (aliases[pathname]) {
     const url = request.nextUrl.clone();

@@ -20,7 +20,8 @@ import { normalizeJobStatus } from "@/lib/status/job";
 import { normalizeLhuStatus } from "@/lib/status/lhu";
 import { normalizeSampleStatus } from "@/lib/status/sample";
 import type { SamplingStatus } from "@/lib/status/sampling";
-import { asRows, dateOnly, pickNullable, pickNumber, pickString } from "@/lib/data/pick";
+import { asJsonRecord } from "@/lib/domain/audit";
+import { asRows, dateOnly, pickBool, pickNullable, pickNumber, pickString } from "@/lib/data/pick";
 
 function isRole(value: string): value is Role {
   return (ROLES as readonly string[]).includes(value);
@@ -65,12 +66,43 @@ export function mapNamed(data: unknown): Array<{ id: string; name: string }> {
   })).filter((row) => row.id);
 }
 
+export function mapMatrices(data: unknown): Matrix[] {
+  return asRows(data)
+    .map((row) => ({
+      id: pickString(row, ["id"]),
+      code: pickString(row, ["code"]),
+      name: pickString(row, ["name", "code", "label"]),
+      description: pickString(row, ["description"]),
+      isActive: pickBool(row, ["is_active"], true),
+    }))
+    .filter((row) => row.id);
+}
+
+export function mapMethods(data: unknown): Method[] {
+  return asRows(data)
+    .map((row) => ({
+      id: pickString(row, ["id"]),
+      code: pickString(row, ["code"]),
+      name: pickString(row, ["name", "code", "label"]),
+      standardRef: pickString(row, ["standard_ref"]),
+      description: pickString(row, ["description"]),
+      isActive: pickBool(row, ["is_active"], true),
+    }))
+    .filter((row) => row.id);
+}
+
 export function mapParameters(data: unknown): Parameter[] {
   return asRows(data)
     .map((row) => ({
       id: pickString(row, ["id"]),
+      code: pickString(row, ["code"]),
       name: pickString(row, ["name", "code", "label", "parameter_name"]),
       unit: pickString(row, ["unit", "unit_name", "satuan", "default_unit", "uom"]) || undefined,
+      methodId: pickString(row, ["method_id"]),
+      matrixId: pickString(row, ["matrix_id"]),
+      loq: pickString(row, ["loq"]),
+      bakuMutu: pickString(row, ["baku_mutu"]),
+      isActive: pickBool(row, ["is_active"], true),
     }))
     .filter((row) => row.id);
 }
@@ -177,23 +209,22 @@ export function mapInvoices(data: unknown): Invoice[] {
 export function mapAudit(data: unknown): AuditLog[] {
   return asRows(data).map((row) => ({
     id: pickString(row, ["id"]),
+    occurredAt: pickString(row, ["occurred_at", "created_at"], new Date().toISOString()),
     actorId: pickString(row, ["actor_id", "user_id"]),
-    entityType: pickString(row, ["entity_type", "entity"], "sample") as AuditLog["entityType"],
-    entityId: pickString(row, ["entity_id"]),
-    fromStatus: pickString(row, ["from_status"]),
-    toStatus: pickString(row, ["to_status"]),
-    override: Boolean(row.override),
-    reason: pickNullable(row, ["reason"]),
-    createdAt: pickString(row, ["created_at"], new Date().toISOString()),
+    action: pickString(row, ["action"], "UPDATE"),
+    tableName: pickString(row, ["table_name", "entity_type", "entity"]),
+    rowId: pickString(row, ["row_id", "entity_id"]),
+    oldData: asJsonRecord(row.old_data),
+    newData: asJsonRecord(row.new_data),
   }));
 }
 
 export function asMatrices(data: unknown): Matrix[] {
-  return mapNamed(data);
+  return mapMatrices(data);
 }
 export function asParameters(data: unknown): Parameter[] {
   return mapParameters(data);
 }
 export function asMethods(data: unknown): Method[] {
-  return mapNamed(data);
+  return mapMethods(data);
 }
