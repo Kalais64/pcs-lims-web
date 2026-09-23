@@ -29,6 +29,7 @@ import {
 } from "@/lib/status/job-gate";
 import { useLims } from "@/lib/store/lims-provider";
 import type { ActionResult } from "@/lib/store/context";
+import { customersForJobPicker } from "@/lib/domain/customers";
 import { firstSiteIdForCustomer, sitesForCustomer } from "@/lib/domain/sites";
 import { formatDateId } from "@/lib/datetime";
 
@@ -66,6 +67,7 @@ export default function JobDetailPage() {
   const locked = job ? criticalJobFieldsLocked(job.status) : true;
   const hasChildren = job ? jobHasChildren(data, job.id) : false;
   const sites = sitesForCustomer(data.sites, form.customerId);
+  const pickerCustomers = customersForJobPicker(data.customers, job?.customerId);
 
   const samples = useMemo(
     () => data.samples.filter((s) => s.jobId === job?.id),
@@ -166,8 +168,8 @@ export default function JobDetailPage() {
               setMessage("Due date tidak valid.");
               return;
             }
-            if (form.customerId && !data.customers.some((c) => c.id === form.customerId)) {
-              setMessage("Customer harus sudah terdaftar.");
+            if (form.customerId && !pickerCustomers.some((c) => c.id === form.customerId)) {
+              setMessage("Customer harus aktif dan sudah terdaftar.");
               return;
             }
             await run("Perubahan disimpan.", () =>
@@ -211,7 +213,7 @@ export default function JobDetailPage() {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  {data.customers.map((c) => (
+                  {pickerCustomers.map((c) => (
                     <SelectItem key={c.id} value={c.id}>
                       {c.companyName}
                     </SelectItem>

@@ -4,6 +4,7 @@ export const EMPTY_DATA: LimsData = {
   version: 2,
   customers: [],
   sites: [],
+  contacts: [],
   matrices: [],
   parameters: [],
   methods: [],

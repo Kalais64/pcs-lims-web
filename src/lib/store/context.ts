@@ -1,8 +1,8 @@
 import { createContext, useContext } from "react";
 import type { RuntimeMode } from "@/lib/config/runtime";
 import type {
-  Customer,
-  CustomerSite,
+  ContactDraft,
+  CustomerDraft,
   Invoice,
   Job,
   JobFreeFields,
@@ -12,11 +12,12 @@ import type {
   Parameter,
   SampleFreeFields,
   SamplingEvent,
+  SiteDraft,
   TestResult,
 } from "@/lib/domain/types";
 import type { SessionUser } from "@/lib/auth/types";
 
-export type ActionResult = { ok: true } | { ok: false; message: string };
+export type ActionResult = { ok: true; id?: string } | { ok: false; message: string };
 
 export type LimsContextValue = {
   data: LimsData;
@@ -25,8 +26,11 @@ export type LimsContextValue = {
   loadError: string | null;
   refresh: () => Promise<void>;
   resetDemo: () => void;
-  upsertCustomer: (input: Omit<Customer, "id"> & { id?: string }) => string;
-  upsertSite: (input: Omit<CustomerSite, "id"> & { id?: string }) => string;
+  createCustomer: (input: CustomerDraft) => ActionResult | Promise<ActionResult>;
+  updateCustomer: (id: string, input: CustomerDraft) => ActionResult | Promise<ActionResult>;
+  setCustomerActive: (id: string, isActive: boolean) => ActionResult | Promise<ActionResult>;
+  saveSite: (input: SiteDraft) => ActionResult | Promise<ActionResult>;
+  saveContact: (input: ContactDraft) => ActionResult | Promise<ActionResult>;
   createJob: (input: Omit<Job, "id" | "jobNo" | "status" | "createdAt">) => string;
   scheduleJob: (jobId: string) => ActionResult | Promise<ActionResult>;
   updateJobFields: (id: string, fields: JobFreeFields, actor: SessionUser) => ActionResult | Promise<ActionResult>;

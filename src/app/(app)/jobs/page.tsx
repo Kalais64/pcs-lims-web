@@ -28,6 +28,7 @@ import { useAuth } from "@/lib/hooks/use-auth";
 import { JOB_STATUSES, JOB_STATUS_LABELS } from "@/lib/status/job";
 import { isValidDueDate } from "@/lib/status/job-gate";
 import { formatDateId } from "@/lib/datetime";
+import { customersForJobPicker, firstActiveCustomerId } from "@/lib/domain/customers";
 import { firstSiteIdForCustomer, sitesForCustomer } from "@/lib/domain/sites";
 import { useLims } from "@/lib/store/lims-provider";
 
@@ -45,9 +46,14 @@ export default function JobsPage() {
     scope: "",
   });
 
+  const pickerCustomers = useMemo(
+    () => customersForJobPicker(data.customers),
+    [data.customers],
+  );
+
   useEffect(() => {
     setForm((prev) => {
-      const customerId = prev.customerId || data.customers[0]?.id || "";
+      const customerId = prev.customerId || firstActiveCustomerId(data.customers);
       if (!customerId) return prev;
       const sites = sitesForCustomer(data.sites, customerId);
       const siteId = sites.some((s) => s.id === prev.siteId)
@@ -163,9 +169,9 @@ export default function JobsPage() {
             className="grid gap-3 md:grid-cols-2"
             onSubmit={(e) => {
               e.preventDefault();
-              const existing = data.customers.find((c) => c.id === form.customerId);
+              const existing = pickerCustomers.find((c) => c.id === form.customerId);
               if (!existing) {
-                setMessage("Pilih customer yang sudah terdaftar.");
+                setMessage("Pilih customer aktif yang sudah terdaftar.");
                 return;
               }
               if (form.dueDate && !isValidDueDate(form.dueDate)) {
@@ -197,7 +203,7 @@ export default function JobsPage() {
                   <SelectValue placeholder="Pilih customer" />
                 </SelectTrigger>
                 <SelectContent>
-                  {data.customers.map((c) => (
+                  {pickerCustomers.map((c) => (
                     <SelectItem key={c.id} value={c.id}>
                       {c.companyName}
                     </SelectItem>
@@ -240,7 +246,7 @@ export default function JobsPage() {
             <Button
               type="submit"
               className="bg-[#16A34A] hover:bg-[#14532D]"
-              disabled={data.customers.length === 0}
+              disabled={pickerCustomers.length === 0}
             >
               Buat Job
             </Button>

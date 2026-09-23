@@ -12,8 +12,15 @@ import {
   transitionLhu,
   transitionSample,
 } from "@/lib/data/rpc";
-import { nextInvoiceNo, nextJobNo, nextLhuNo, nextSampleNo, nowIso } from "@/lib/domain/ids";
-import type { Invoice, LimsData, SampleFreeFields, SamplingEvent } from "@/lib/domain/types";
+import { nextCustomerCode, nextInvoiceNo, nextJobNo, nextLhuNo, nextSampleNo, nowIso } from "@/lib/domain/ids";
+import type {
+  ContactDraft,
+  Invoice,
+  LimsData,
+  SampleFreeFields,
+  SamplingEvent,
+  SiteDraft,
+} from "@/lib/domain/types";
 import { createBrowserSupabase } from "@/lib/supabase/browser";
 import { deriveJobStatus } from "@/lib/store/sync-job";
 import { LimsContext, type ActionResult, type LimsContextValue, type MasterInput, type MasterKind } from "@/lib/store/context";
@@ -142,42 +149,131 @@ export function LiveLimsProvider({
     }
   }, []);
 
-  const upsertCustomer: LimsContextValue["upsertCustomer"] = useCallback(
-    (input) => {
-      const id = input.id ?? crypto.randomUUID();
-      void withClient(async (client) => {
-        await insertRow(client, "customers", [
+  const createCustomer: LimsContextValue["createCustomer"] = useCallback(
+    (input) =>
+      withClient(async (client) => {
+        const name = input.name.trim();
+        if (!name) return fail("Nama perusahaan wajib diisi.");
+        const code = (input.code?.trim() || nextCustomerCode(data.customers.map((c) => c.code))).toUpperCase();
+        if (data.customers.some((c) => c.code.toUpperCase() === code)) {
+          return fail("Kode customer sudah dipakai.");
+        }
+        const inserted = await insertRow(client, "customers", [
           {
-            id,
-            company_name: input.companyName,
-            name: input.companyName,
-            pic: input.pic,
-            email: input.email,
-            phone: input.phone,
-            address: input.address,
+            code,
+            name,
+            npwp: input.npwp?.trim() || null,
+            billing_address: input.billingAddress?.trim() || null,
+            phone: input.phone?.trim() || null,
+            email: input.email?.trim() || null,
+            notes: input.notes?.trim() || null,
+            is_active: true,
+          },
+        ]);
+        const id = inserted.row?.id as string | undefined;
+        await refresh();
+        return { ok: true, id };
+      }),
+    [data.customers, refresh, withClient],
+  );
+
+  const updateCustomer: LimsContextValue["updateCustomer"] = useCallback(
+    (id, input) =>
+      withClient(async (client) => {
+        const current = data.customers.find((c) => c.id === id);
+        if (!current) return fail("Customer tidak ditemukan.");
+        if (!current.isActive) return fail("Customer nonaktif hanya bisa diaktifkan kembali.");
+        const name = input.name.trim();
+        if (!name) return fail("Nama perusahaan wajib diisi.");
+        await updateRow(client, "customers", id, [
+          {
+            name,
+            npwp: input.npwp?.trim() || null,
+            billing_address: input.billingAddress?.trim() || null,
+            phone: input.phone?.trim() || null,
+            email: input.email?.trim() || null,
+            notes: input.notes?.trim() || null,
           },
         ]);
         await refresh();
-        return { ok: true };
-      });
-      return id;
-    },
+        return { ok: true, id };
+      }),
+    [data.customers, refresh, withClient],
+  );
+
+  const setCustomerActive: LimsContextValue["setCustomerActive"] = useCallback(
+    (id, isActive) =>
+      withClient(async (client) => {
+        if (!data.customers.some((c) => c.id === id)) return fail("Customer tidak ditemukan.");
+        await updateRow(client, "customers", id, [{ is_active: isActive }]);
+        await refresh();
+        return { ok: true, id };
+      }),
+    [data.customers, refresh, withClient],
+  );
+
+  const saveSite: LimsContextValue["saveSite"] = useCallback(
+    (input: SiteDraft) =>
+      withClient(async (client) => {
+        const customerId = uuidOrNull(input.customerId);
+        if (!customerId) return fail("Site wajib terkait customer.");
+        const name = input.name.trim();
+        if (!name) return fail("Nama site wajib diisi.");
+        const payload = {
+          customer_id: customerId,
+          name,
+          address: input.address?.trim() || null,
+          city: input.city?.trim() || null,
+          province: input.province?.trim() || null,
+          latitude: optionalNumber(input.latitude),
+          longitude: optionalNumber(input.longitude),
+        };
+        if (input.id) {
+          await updateRow(client, "sites", input.id, [payload]);
+          await refresh();
+          return { ok: true, id: input.id };
+        }
+        const inserted = await insertRow(client, "sites", [payload]);
+        await refresh();
+        return { ok: true, id: inserted.row?.id as string | undefined };
+      }),
     [refresh, withClient],
   );
 
-  const upsertSite: LimsContextValue["upsertSite"] = useCallback(
-    (input) => {
-      const id = input.id ?? crypto.randomUUID();
-      void withClient(async (client) => {
-        await insertRow(client, "sites", [
-          { id, customer_id: input.customerId, name: input.name, address: input.address },
-        ]);
+  const saveContact: LimsContextValue["saveContact"] = useCallback(
+    (input: ContactDraft) =>
+      withClient(async (client) => {
+        const customerId = uuidOrNull(input.customerId);
+        if (!customerId) return fail("Kontak wajib terkait customer.");
+        const fullName = input.fullName.trim();
+        if (!fullName) return fail("Nama kontak wajib diisi.");
+        const payload = {
+          customer_id: customerId,
+          full_name: fullName,
+          title: input.title?.trim() || null,
+          phone: input.phone?.trim() || null,
+          email: input.email?.trim() || null,
+          is_primary: Boolean(input.isPrimary),
+        };
+        let id = input.id;
+        if (id) {
+          await updateRow(client, "contacts", id, [payload]);
+        } else {
+          const inserted = await insertRow(client, "contacts", [payload]);
+          id = inserted.row?.id as string | undefined;
+        }
+        if (input.isPrimary && id) {
+          const others = data.contacts.filter(
+            (row) => row.customerId === customerId && row.id !== id && row.isPrimary,
+          );
+          for (const other of others) {
+            await updateRow(client, "contacts", other.id, [{ is_primary: false }]);
+          }
+        }
         await refresh();
-        return { ok: true };
-      });
-      return id;
-    },
-    [refresh, withClient],
+        return { ok: true, id };
+      }),
+    [data.contacts, refresh, withClient],
   );
 
   const createJob: LimsContextValue["createJob"] = useCallback(
@@ -618,8 +714,11 @@ export function LiveLimsProvider({
       loadError,
       refresh,
       resetDemo: () => undefined,
-      upsertCustomer,
-      upsertSite,
+      createCustomer,
+      updateCustomer,
+      setCustomerActive,
+      saveSite,
+      saveContact,
       createJob,
       scheduleJob,
       updateJobFields,
@@ -648,8 +747,11 @@ export function LiveLimsProvider({
       isLoading,
       loadError,
       refresh,
-      upsertCustomer,
-      upsertSite,
+      createCustomer,
+      updateCustomer,
+      setCustomerActive,
+      saveSite,
+      saveContact,
       createJob,
       scheduleJob,
       updateJobFields,

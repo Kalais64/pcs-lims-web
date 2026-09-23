@@ -1,12 +1,19 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import Link from "next/link";
 import { PageHeader } from "@/components/lims/page-header";
 import { Panel } from "@/components/lims/panel";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import {
   Table,
   TableBody,
@@ -20,193 +27,106 @@ import { useLims } from "@/lib/store/lims-provider";
 
 export default function CustomersPage() {
   const { user } = useAuth();
-  const { data, upsertCustomer, upsertSite } = useLims();
+  const { data, isLoading, loadError } = useLims();
   const canWrite = user?.role === "admin" || user?.role === "sales";
   const [query, setQuery] = useState("");
-  const [selectedId, setSelectedId] = useState<string | null>(data.customers[0]?.id ?? null);
-  const [form, setForm] = useState({
-    companyName: "",
-    pic: "",
-    email: "",
-    phone: "",
-    address: "",
-  });
-  const [siteForm, setSiteForm] = useState({ name: "", address: "" });
+  const [status, setStatus] = useState<"all" | "active" | "inactive">("active");
 
-  const customers = useMemo(
-    () =>
-      data.customers.filter((c) =>
-        `${c.companyName} ${c.pic}`.toLowerCase().includes(query.toLowerCase()),
-      ),
-    [data.customers, query],
-  );
-  const sites = data.sites.filter((s) => s.customerId === selectedId);
+  const customers = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    return data.customers.filter((c) => {
+      if (status === "active" && !c.isActive) return false;
+      if (status === "inactive" && c.isActive) return false;
+      if (!q) return true;
+      return `${c.companyName} ${c.code} ${c.pic}`.toLowerCase().includes(q);
+    });
+  }, [data.customers, query, status]);
 
   return (
     <div className="space-y-5">
       <PageHeader
         title="Customer"
-        description="Perusahaan, PIC/HSE, dan lokasi sampling (site)."
+        description="Perusahaan, site sampling, dan kontak. Nonaktifkan — tanpa hapus permanen."
+        actions={
+          canWrite ? (
+            <Button asChild className="bg-[#16A34A] hover:bg-[#14532D]">
+              <Link href="/customers/new">Customer baru</Link>
+            </Button>
+          ) : null
+        }
       />
-      <div className="grid gap-4 xl:grid-cols-[1.2fr_1fr]">
-        <Panel title="Daftar customer">
-          <Input
-            className="mb-3"
-            placeholder="Cari perusahaan / PIC"
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-          />
-          <Table>
-            <TableHeader>
+      <div className="flex flex-wrap gap-2">
+        <Input
+          className="max-w-sm bg-white"
+          placeholder="Cari nama atau kode"
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+        />
+        <Select value={status} onValueChange={(v) => setStatus(v as typeof status)}>
+          <SelectTrigger className="w-[200px] bg-white">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="active">Aktif</SelectItem>
+            <SelectItem value="inactive">Nonaktif</SelectItem>
+            <SelectItem value="all">Semua</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+      <Panel title="Daftar customer">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Kode</TableHead>
+              <TableHead>Perusahaan</TableHead>
+              <TableHead>Kontak utama</TableHead>
+              <TableHead>Status</TableHead>
+              <TableHead />
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {customers.length === 0 ? (
               <TableRow>
-                <TableHead>Perusahaan</TableHead>
-                <TableHead>PIC / HSE</TableHead>
-                <TableHead>Kontak</TableHead>
+                <TableCell colSpan={5} className="text-[#5d7266]">
+                  {isLoading
+                    ? "Memuat customer…"
+                    : loadError
+                      ? `Gagal memuat daftar: ${loadError}`
+                      : "Tidak ada customer."}
+                </TableCell>
               </TableRow>
-            </TableHeader>
-            <TableBody>
-              {customers.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={3} className="text-[#5d7266]">
-                    Tidak ada customer.
+            ) : (
+              customers.map((c) => (
+                <TableRow key={c.id}>
+                  <TableCell className="font-medium">{c.code || "—"}</TableCell>
+                  <TableCell>{c.companyName}</TableCell>
+                  <TableCell>
+                    {c.pic || "—"}
+                    <div className="text-xs text-[#5d7266]">{c.email || c.phone}</div>
+                  </TableCell>
+                  <TableCell>
+                    <Badge
+                      variant="outline"
+                      className={
+                        c.isActive
+                          ? "border-[#16A34A] text-[#14532D]"
+                          : "border-[#d5e4da] text-[#5d7266]"
+                      }
+                    >
+                      {c.isActive ? "Aktif" : "Nonaktif"}
+                    </Badge>
+                  </TableCell>
+                  <TableCell>
+                    <Link href={`/customers/${c.id}`} className="text-sm text-[#16A34A] underline">
+                      Detail
+                    </Link>
                   </TableCell>
                 </TableRow>
-              ) : (
-                customers.map((c) => (
-                  <TableRow
-                    key={c.id}
-                    className={selectedId === c.id ? "bg-[#e7f4ec]" : "cursor-pointer"}
-                    onClick={() => setSelectedId(c.id)}
-                  >
-                    <TableCell className="font-medium">{c.companyName}</TableCell>
-                    <TableCell>{c.pic}</TableCell>
-                    <TableCell>
-                      {c.email}
-                      <div className="text-xs text-[#5d7266]">{c.phone}</div>
-                    </TableCell>
-                  </TableRow>
-                ))
-              )}
-            </TableBody>
-          </Table>
-        </Panel>
-
-        <div className="space-y-4">
-          {canWrite ? (
-            <Panel title="Tambah / perbarui customer">
-              <form
-                className="grid gap-3"
-                onSubmit={(e) => {
-                  e.preventDefault();
-                  const id = upsertCustomer(form);
-                  setSelectedId(id);
-                  setForm({ companyName: "", pic: "", email: "", phone: "", address: "" });
-                }}
-              >
-                <Field label="Nama perusahaan">
-                  <Input
-                    required
-                    value={form.companyName}
-                    onChange={(e) => setForm({ ...form, companyName: e.target.value })}
-                  />
-                </Field>
-                <Field label="PIC / HSE">
-                  <Input value={form.pic} onChange={(e) => setForm({ ...form, pic: e.target.value })} />
-                </Field>
-                <div className="grid gap-3 sm:grid-cols-2">
-                  <Field label="Email">
-                    <Input
-                      type="email"
-                      value={form.email}
-                      onChange={(e) => setForm({ ...form, email: e.target.value })}
-                    />
-                  </Field>
-                  <Field label="Telepon">
-                    <Input value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} />
-                  </Field>
-                </div>
-                <Field label="Alamat perusahaan">
-                  <Textarea
-                    value={form.address}
-                    onChange={(e) => setForm({ ...form, address: e.target.value })}
-                  />
-                </Field>
-                <Button type="submit" className="bg-[#16A34A] hover:bg-[#14532D]">
-                  Simpan Customer
-                </Button>
-              </form>
-            </Panel>
-          ) : null}
-
-          <Panel title="Site / lokasi sampling">
-            {selectedId ? (
-              <div className="space-y-3">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Nama site</TableHead>
-                      <TableHead>Alamat</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {sites.length === 0 ? (
-                      <TableRow>
-                        <TableCell colSpan={2} className="text-[#5d7266]">
-                          Belum ada site.
-                        </TableCell>
-                      </TableRow>
-                    ) : (
-                      sites.map((s) => (
-                        <TableRow key={s.id}>
-                          <TableCell>{s.name}</TableCell>
-                          <TableCell>{s.address}</TableCell>
-                        </TableRow>
-                      ))
-                    )}
-                  </TableBody>
-                </Table>
-                {canWrite ? (
-                  <form
-                    className="grid gap-2 sm:grid-cols-[1fr_1fr_auto]"
-                    onSubmit={(e) => {
-                      e.preventDefault();
-                      upsertSite({ customerId: selectedId, ...siteForm });
-                      setSiteForm({ name: "", address: "" });
-                    }}
-                  >
-                    <Input
-                      required
-                      placeholder="Nama site"
-                      value={siteForm.name}
-                      onChange={(e) => setSiteForm({ ...siteForm, name: e.target.value })}
-                    />
-                    <Input
-                      required
-                      placeholder="Alamat site"
-                      value={siteForm.address}
-                      onChange={(e) => setSiteForm({ ...siteForm, address: e.target.value })}
-                    />
-                    <Button type="submit" className="bg-[#16A34A] hover:bg-[#14532D]">
-                      Tambah site
-                    </Button>
-                  </form>
-                ) : null}
-              </div>
-            ) : (
-              <p className="text-sm text-[#5d7266]">Pilih customer untuk melihat site.</p>
+              ))
             )}
-          </Panel>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function Field({ label, children }: { label: string; children: React.ReactNode }) {
-  return (
-    <div className="space-y-1">
-      <Label>{label}</Label>
-      {children}
+          </TableBody>
+        </Table>
+      </Panel>
     </div>
   );
 }

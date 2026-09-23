@@ -14,11 +14,17 @@ export type StaffProfile = {
 
 export type Customer = {
   id: string;
+  code: string;
   companyName: string;
   pic: string;
   email: string;
   phone: string;
   address: string;
+  npwp: string;
+  notes: string;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
 };
 
 export type CustomerSite = {
@@ -26,6 +32,53 @@ export type CustomerSite = {
   customerId: string;
   name: string;
   address: string;
+  city: string;
+  province: string;
+  latitude: string;
+  longitude: string;
+};
+
+export type Contact = {
+  id: string;
+  customerId: string;
+  fullName: string;
+  title: string;
+  phone: string;
+  email: string;
+  isPrimary: boolean;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type CustomerDraft = {
+  code?: string;
+  name: string;
+  npwp?: string;
+  billingAddress?: string;
+  phone?: string;
+  email?: string;
+  notes?: string;
+};
+
+export type SiteDraft = {
+  id?: string;
+  customerId: string;
+  name: string;
+  address?: string;
+  city?: string;
+  province?: string;
+  latitude?: string;
+  longitude?: string;
+};
+
+export type ContactDraft = {
+  id?: string;
+  customerId: string;
+  fullName: string;
+  title?: string;
+  phone?: string;
+  email?: string;
+  isPrimary?: boolean;
 };
 
 export type Matrix = {
@@ -158,6 +211,7 @@ export type LimsData = {
   version: 2;
   customers: Customer[];
   sites: CustomerSite[];
+  contacts: Contact[];
   matrices: Matrix[];
   parameters: Parameter[];
   methods: Method[];

@@ -29,6 +29,12 @@ function nextSeq(existing: string[], prefix: string) {
   return String(next).padStart(3, "0");
 }
 
+export function nextCustomerCode(codes: string[], date = new Date()) {
+  const { yymmdd } = jakartaParts(date);
+  const prefix = `CUS-${yymmdd}-`;
+  return `${prefix}${nextSeq(codes, prefix)}`;
+}
+
 export function nextJobNo(jobNos: string[], date = new Date()) {
   const { yymmdd } = jakartaParts(date);
   const prefix = `PCS-${yymmdd}-`;
