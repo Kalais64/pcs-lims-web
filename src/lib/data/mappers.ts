@@ -1,0 +1,170 @@
+import { ROLES, type Role } from "@/lib/auth/types";
+import type {
+  AuditLog,
+  Customer,
+  CustomerSite,
+  Invoice,
+  Job,
+  LhuRecord,
+  Matrix,
+  Method,
+  Parameter,
+  Sample,
+  SamplingEvent,
+  StaffProfile,
+  TestResult,
+  Unit,
+} from "@/lib/domain/types";
+import type { InvoiceStatus } from "@/lib/status/invoice";
+import type { JobStatus } from "@/lib/status/job";
+import type { LhuStatus } from "@/lib/status/lhu";
+import type { SampleStatus } from "@/lib/status/sample";
+import type { SamplingStatus } from "@/lib/status/sampling";
+import { asRows, dateOnly, pickNullable, pickNumber, pickString } from "@/lib/data/pick";
+
+function isRole(value: string): value is Role {
+  return (ROLES as readonly string[]).includes(value);
+}
+
+export function mapProfiles(data: unknown): StaffProfile[] {
+  return asRows(data).map((row) => {
+    const roleRaw = pickString(row, ["role", "user_role"], "sales");
+    return {
+      id: pickString(row, ["id", "user_id"]),
+      name: pickString(row, ["full_name", "name", "display_name", "email"]),
+      email: pickString(row, ["email"]),
+      role: isRole(roleRaw) ? roleRaw : "sales",
+    };
+  });
+}
+
+export function mapCustomers(data: unknown): Customer[] {
+  return asRows(data).map((row) => ({
+    id: pickString(row, ["id"]),
+    companyName: pickString(row, ["company_name", "name", "legal_name"]),
+    pic: pickString(row, ["pic", "pic_name", "contact_name", "hse_name"]),
+    email: pickString(row, ["email", "pic_email"]),
+    phone: pickString(row, ["phone", "pic_phone", "telephone"]),
+    address: pickString(row, ["address", "company_address"]),
+  }));
+}
+
+export function mapSites(data: unknown): CustomerSite[] {
+  return asRows(data).map((row) => ({
+    id: pickString(row, ["id"]),
+    customerId: pickString(row, ["customer_id"]),
+    name: pickString(row, ["name", "site_name"]),
+    address: pickString(row, ["address", "site_address"]),
+  }));
+}
+
+export function mapNamed(data: unknown): Array<{ id: string; name: string }> {
+  return asRows(data).map((row) => ({
+    id: pickString(row, ["id"]),
+    name: pickString(row, ["name", "code", "label"]),
+  }));
+}
+
+export function mapJobs(data: unknown): Job[] {
+  return asRows(data).map((row) => ({
+    id: pickString(row, ["id"]),
+    jobNo: pickString(row, ["job_no", "job_number", "code"]),
+    customerId: pickString(row, ["customer_id"]),
+    siteId: pickString(row, ["site_id", "customer_site_id"]),
+    matrixId: pickString(row, ["matrix_id"]),
+    dueDate: dateOnly(pickString(row, ["due_date", "due_at"])),
+    scope: pickString(row, ["scope", "notes", "description"]),
+    status: pickString(row, ["status"]) as JobStatus,
+    createdAt: pickString(row, ["created_at"], new Date().toISOString()),
+  }));
+}
+
+export function mapSampling(data: unknown): SamplingEvent[] {
+  return asRows(data).map((row) => ({
+    id: pickString(row, ["id"]),
+    jobId: pickString(row, ["job_id"]),
+    siteId: pickString(row, ["site_id", "customer_site_id"]),
+    date: dateOnly(pickString(row, ["date", "scheduled_date", "sampling_date", "sampled_at"])),
+    petugas: pickString(row, ["petugas", "sampler_name", "officer_name", "assigned_to_name"]),
+    status: pickString(row, ["status"], "scheduled") as SamplingStatus,
+  }));
+}
+
+export function mapSamples(data: unknown): Sample[] {
+  return asRows(data).map((row) => ({
+    id: pickString(row, ["id"]),
+    sampleNo: pickString(row, ["sample_no", "sample_number", "code"]),
+    jobId: pickString(row, ["job_id"]),
+    matrixId: pickString(row, ["matrix_id"]),
+    status: pickString(row, ["status"]) as SampleStatus,
+    receivedAt: pickNullable(row, ["received_at"]),
+    conditionNotes: pickString(row, ["condition_notes", "receive_notes", "notes"]),
+    verifiedById: pickNullable(row, ["verified_by", "verified_by_id", "verifier_id"]),
+    approvedById: pickNullable(row, ["approved_by", "approved_by_id", "approver_id"]),
+    rejectReason: pickNullable(row, ["reject_reason", "rejection_reason"]),
+    createdAt: pickString(row, ["created_at"], new Date().toISOString()),
+  }));
+}
+
+export function mapResults(data: unknown): TestResult[] {
+  return asRows(data).map((row) => ({
+    id: pickString(row, ["id"]),
+    sampleId: pickString(row, ["sample_id"]),
+    parameterId: pickString(row, ["parameter_id"]),
+    methodId: pickString(row, ["method_id"]),
+    unitId: pickString(row, ["unit_id"]),
+    result: pickString(row, ["result", "value", "result_value", "result_text"]),
+    analystId: pickString(row, ["analyst_id", "tested_by"]),
+    testedAt: pickString(row, ["tested_at", "created_at"], new Date().toISOString()),
+  }));
+}
+
+export function mapLhu(data: unknown): LhuRecord[] {
+  return asRows(data).map((row) => ({
+    id: pickString(row, ["id"]),
+    lhuNo: pickString(row, ["lhu_number", "lhu_no", "document_no", "number"]),
+    jobId: pickString(row, ["job_id"]),
+    revision: pickNumber(row, ["revision", "rev"], 0),
+    issuerId: pickString(row, ["issuer_id", "issued_by", "approved_by"]),
+    issuedAt: pickNullable(row, ["issued_at"]),
+    status: pickString(row, ["status"]) as LhuStatus,
+  }));
+}
+
+export function mapInvoices(data: unknown): Invoice[] {
+  return asRows(data).map((row) => ({
+    id: pickString(row, ["id"]),
+    invoiceNo: pickString(row, ["invoice_no", "invoice_number", "number"]),
+    jobId: pickString(row, ["job_id"]),
+    amount: pickNumber(row, ["amount", "total", "grand_total"]),
+    status: pickString(row, ["status"]) as InvoiceStatus,
+    createdAt: pickString(row, ["created_at"], new Date().toISOString()),
+  }));
+}
+
+export function mapAudit(data: unknown): AuditLog[] {
+  return asRows(data).map((row) => ({
+    id: pickString(row, ["id"]),
+    actorId: pickString(row, ["actor_id", "user_id"]),
+    entityType: pickString(row, ["entity_type", "entity"], "sample") as AuditLog["entityType"],
+    entityId: pickString(row, ["entity_id"]),
+    fromStatus: pickString(row, ["from_status"]),
+    toStatus: pickString(row, ["to_status"]),
+    override: Boolean(row.override),
+    reason: pickNullable(row, ["reason"]),
+    createdAt: pickString(row, ["created_at"], new Date().toISOString()),
+  }));
+}
+
+export function asMatrices(data: unknown): Matrix[] {
+  return mapNamed(data);
+}
+export function asParameters(data: unknown): Parameter[] {
+  return mapNamed(data);
+}
+export function asMethods(data: unknown): Method[] {
+  return mapNamed(data);
+}
+export function asUnits(data: unknown): Unit[] {
+  return mapNamed(data);
+}

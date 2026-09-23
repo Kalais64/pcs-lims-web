@@ -23,7 +23,7 @@ const TABS = [
 ] as const;
 
 export default function MasterPage() {
-  const { data, upsertMaster, resetDemo } = useLims();
+  const { data, upsertMaster, resetDemo, mode } = useLims();
   const [tab, setTab] = useState<(typeof TABS)[number]["key"]>("matrices");
   const [name, setName] = useState("");
 
@@ -35,9 +35,11 @@ export default function MasterPage() {
         title="Master Data"
         description="CRUD matriks, parameter, metode, dan satuan untuk worksheet pengujian."
         actions={
-          <Button variant="outline" onClick={resetDemo}>
-            Reset data demo
-          </Button>
+          mode === "fixtures" ? (
+            <Button variant="outline" onClick={resetDemo}>
+              Reset data demo
+            </Button>
+          ) : null
         }
       />
       <div className="flex flex-wrap gap-2">

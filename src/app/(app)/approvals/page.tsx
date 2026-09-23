@@ -21,12 +21,11 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { DEMO_USERS } from "@/lib/fixtures/users";
 import { useAuth } from "@/lib/hooks/use-auth";
-import { useLims } from "@/lib/store/lims-provider";
+import { staffName, useLims } from "@/lib/store/lims-provider";
 
 export default function ApprovalsPage() {
-  const { user, switchRole } = useAuth();
+  const { user, switchRole, mode } = useAuth();
   const { data, verifySample, approveSample, rejectSample } = useLims();
   const [status, setStatus] = useState("queue");
   const [reasons, setReasons] = useState<Record<string, string>>({});
@@ -42,8 +41,7 @@ export default function ApprovalsPage() {
   );
 
   function actorName(id: string | null) {
-    if (!id) return "—";
-    return DEMO_USERS.find((u) => u.id === id)?.name ?? id;
+    return staffName(data, id);
   }
 
   return (
@@ -54,12 +52,21 @@ export default function ApprovalsPage() {
       />
       <div className="flex flex-wrap items-center gap-2 text-sm text-[#6b7d89]">
         <span>Anda: {user?.name}</span>
-        <Button size="sm" variant="outline" onClick={() => switchRole("verifier")}>
-          Jadi Verifier
-        </Button>
-        <Button size="sm" variant="outline" onClick={() => switchRole("approver")}>
-          Jadi Approver
-        </Button>
+        {mode === "fixtures" ? (
+          <>
+            <Button size="sm" variant="outline" onClick={() => switchRole("verifier")}>
+              Jadi Verifier
+            </Button>
+            <Button size="sm" variant="outline" onClick={() => switchRole("approver")}>
+              Jadi Approver
+            </Button>
+          </>
+        ) : (
+          <span>
+            Dual control live: masuk sebagai user Auth lain (verifier ≠ approver). Role switch
+            dimatikan agar tidak mensimulasikan auth.uid().
+          </span>
+        )}
       </div>
       <Select value={status} onValueChange={setStatus}>
         <SelectTrigger className="w-[240px] bg-white">
@@ -124,9 +131,9 @@ export default function ApprovalsPage() {
                         <Button
                           size="sm"
                           className="bg-[#168cc5] hover:bg-[#0a4f7b]"
-                          onClick={() => {
+                          onClick={async () => {
                             if (!user) return;
-                            const res = verifySample(s.id, user);
+                            const res = await verifySample(s.id, user);
                             setMessage(res.ok ? `${s.sampleNo} diverifikasi.` : res.message);
                           }}
                         >
@@ -137,10 +144,10 @@ export default function ApprovalsPage() {
                         <Button
                           size="sm"
                           variant="outline"
-                          onClick={() => {
+                          onClick={async () => {
                             if (!user) return;
                             const override = user.role === "admin" && s.status === "pending_verify";
-                            const res = approveSample(s.id, user, override);
+                            const res = await approveSample(s.id, user, override);
                             setMessage(res.ok ? `${s.sampleNo} disetujui.` : res.message);
                           }}
                         >
@@ -158,9 +165,9 @@ export default function ApprovalsPage() {
                         <Button
                           size="sm"
                           variant="destructive"
-                          onClick={() => {
+                          onClick={async () => {
                             if (!user) return;
-                            const res = rejectSample(s.id, user, reasons[s.id] ?? "");
+                            const res = await rejectSample(s.id, user, reasons[s.id] ?? "");
                             setMessage(res.ok ? `${s.sampleNo} ditolak.` : res.message);
                           }}
                         >

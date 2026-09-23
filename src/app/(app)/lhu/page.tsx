@@ -20,10 +20,9 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { DEMO_USERS } from "@/lib/fixtures/users";
 import { useAuth } from "@/lib/hooks/use-auth";
 import { LHU_STATUSES, LHU_STATUS_LABELS } from "@/lib/status/lhu";
-import { useLims } from "@/lib/store/lims-provider";
+import { staffName, useLims } from "@/lib/store/lims-provider";
 
 export default function LhuPage() {
   const { user } = useAuth();
@@ -79,13 +78,13 @@ export default function LhuPage() {
             ) : (
               rows.map((l) => {
                 const job = data.jobs.find((j) => j.id === l.jobId);
-                const issuer = DEMO_USERS.find((u) => u.id === l.issuerId);
+                const issuerName = staffName(data, l.issuerId);
                 return (
                   <TableRow key={l.id}>
                     <TableCell className="font-medium">{l.lhuNo}</TableCell>
                     <TableCell>{job?.jobNo}</TableCell>
                     <TableCell>{l.revision}</TableCell>
-                    <TableCell>{issuer?.name ?? l.issuerId}</TableCell>
+                    <TableCell>{issuerName}</TableCell>
                     <TableCell>
                       {l.issuedAt ? new Date(l.issuedAt).toLocaleString("id-ID") : "—"}
                     </TableCell>
@@ -112,9 +111,9 @@ export default function LhuPage() {
                 </span>
                 <Button
                   className="bg-[#168cc5] hover:bg-[#0a4f7b]"
-                  onClick={() => {
+                  onClick={async () => {
                     if (!user) return;
-                    const res = issueLhu(job.id, user);
+                    const res = await issueLhu(job.id, user);
                     setMessage(res.ok ? `LHU diterbitkan untuk ${job.jobNo}.` : res.message);
                   }}
                 >

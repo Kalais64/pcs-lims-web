@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { PageHeader } from "@/components/lims/page-header";
 import { Panel } from "@/components/lims/panel";
 import { StatusBadge } from "@/components/status/status-badge";
@@ -40,6 +40,11 @@ export default function SamplesPage() {
     matrixId: data.jobs[0]?.matrixId ?? data.matrices[0]?.id ?? "",
   });
   const [receive, setReceive] = useState<Record<string, { at: string; notes: string }>>({});
+  const [nowLocal, setNowLocal] = useState("");
+
+  useEffect(() => {
+    setNowLocal(new Date().toISOString().slice(0, 16));
+  }, []);
 
   const rows = useMemo(
     () =>
@@ -118,7 +123,7 @@ export default function SamplesPage() {
               const job = data.jobs.find((j) => j.id === s.jobId);
               const matrix = data.matrices.find((m) => m.id === s.matrixId);
               const rec = receive[s.id] ?? {
-                at: new Date().toISOString().slice(0, 16),
+                at: nowLocal,
                 notes: s.conditionNotes,
               };
               return (
@@ -153,9 +158,9 @@ export default function SamplesPage() {
                         <Button
                           size="sm"
                           className="bg-[#168cc5] hover:bg-[#0a4f7b]"
-                          onClick={() => {
+                          onClick={async () => {
                             const iso = rec.at ? new Date(rec.at).toISOString() : new Date().toISOString();
-                            const res = receiveSample(s.id, iso, rec.notes);
+                            const res = await receiveSample(s.id, iso, rec.notes);
                             setError(res.ok ? null : res.message);
                           }}
                         >

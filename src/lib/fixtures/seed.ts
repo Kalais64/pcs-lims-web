@@ -1,4 +1,5 @@
 import type { LimsData } from "@/lib/domain/types";
+import { DEMO_USERS } from "@/lib/fixtures/users";
 
 export const SEED_DATA: LimsData = {
   version: 2,
@@ -183,4 +184,5 @@ export const SEED_DATA: LimsData = {
   lhuRecords: [],
   invoices: [],
   auditLogs: [],
+  profiles: DEMO_USERS.map(({ password: _password, ...user }) => user),
 };

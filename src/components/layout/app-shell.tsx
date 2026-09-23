@@ -15,6 +15,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
+import { DataBanner } from "@/components/layout/data-banner";
 import { SidebarBrand, SidebarNav } from "@/components/layout/sidebar-nav";
 
 function SidebarBody({
@@ -43,7 +44,7 @@ function SidebarBody({
 }
 
 export function AppShell({ children }: { children: React.ReactNode }) {
-  const { user, logout, switchRole } = useAuth();
+  const { user, logout, switchRole, mode } = useAuth();
   const [open, setOpen] = useState(false);
   const pathname = usePathname();
   const router = useRouter();
@@ -92,27 +93,34 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             <div className="rounded-[10px] border border-[#dce7ee] bg-white px-3.5 py-2 text-sm text-[#183042]">
               {user.name} · {ROLE_LABELS[user.role]}
             </div>
-            <Select
-              value={user.role}
-              onValueChange={(role) => {
-                switchRole(role as typeof user.role);
-                if (!canAccessPath(role as typeof user.role, pathname)) {
-                  router.replace("/dashboard");
-                }
-              }}
-            >
-              <SelectTrigger className="w-[170px] bg-white" aria-label="Ganti peran demo">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {ROLES.map((role) => (
-                  <SelectItem key={role} value={role}>
-                    {ROLE_LABELS[role]}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            {mode === "fixtures" ? (
+              <Select
+                value={user.role}
+                onValueChange={(role) => {
+                  switchRole(role as typeof user.role);
+                  if (!canAccessPath(role as typeof user.role, pathname)) {
+                    router.replace("/dashboard");
+                  }
+                }}
+              >
+                <SelectTrigger className="w-[170px] bg-white" aria-label="Ganti peran demo">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {ROLES.map((role) => (
+                    <SelectItem key={role} value={role}>
+                      {ROLE_LABELS[role]}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            ) : (
+              <div className="rounded-[10px] border border-[#dce7ee] bg-[#eef7fb] px-3.5 py-2 text-xs text-[#0a4f7b]">
+                Peran dari profiles · auth.uid()
+              </div>
+            )}
           </div>
+          <DataBanner />
           {children}
         </main>
       </div>

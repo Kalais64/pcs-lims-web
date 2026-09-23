@@ -125,7 +125,7 @@ export default function JobsPage() {
                     </TableCell>
                     <TableCell>
                       {canWrite && job.status === "draft" ? (
-                        <Button size="sm" variant="outline" onClick={() => scheduleJob(job.id)}>
+                        <Button size="sm" variant="outline" onClick={() => void scheduleJob(job.id)}>
                           Jadwalkan
                         </Button>
                       ) : null}

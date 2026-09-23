@@ -205,9 +205,9 @@ export default function TestingPage() {
           <div className="flex flex-wrap gap-2">
             <Button
               className="bg-[#168cc5] hover:bg-[#0a4f7b]"
-              onClick={() => {
+              onClick={async () => {
                 if (!user) return;
-                const res = saveResults(
+                const res = await saveResults(
                   sampleId,
                   rows.map((r) => ({
                     ...r,
@@ -224,8 +224,8 @@ export default function TestingPage() {
             </Button>
             <Button
               variant="outline"
-              onClick={() => {
-                const res = submitForVerify(sampleId);
+              onClick={async () => {
+                const res = await submitForVerify(sampleId);
                 setMessage(res.ok ? "Dikirim ke verifikasi." : res.message);
               }}
             >

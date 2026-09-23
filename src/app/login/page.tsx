@@ -17,7 +17,7 @@ import { DEMO_PASSWORD, DEMO_USERS } from "@/lib/fixtures/users";
 import { useAuth } from "@/lib/hooks/use-auth";
 
 export default function LoginPage() {
-  const { login, loginAsRole } = useAuth();
+  const { login, loginAsRole, mode } = useAuth();
   const [role, setRole] = useState<Role>("admin");
   const [email, setEmail] = useState(DEMO_USERS[0].email);
   const [password, setPassword] = useState(DEMO_PASSWORD);
@@ -38,9 +38,9 @@ export default function LoginPage() {
     setError(null);
   }
 
-  function onSubmit(event: React.FormEvent) {
+  async function onSubmit(event: React.FormEvent) {
     event.preventDefault();
-    const result = login(email, password, role);
+    const result = await login(email, password, role);
     if (!result.ok) setError(result.message);
   }
 
@@ -51,8 +51,14 @@ export default function LoginPage() {
           <p className="text-xs font-semibold tracking-wide text-[#168cc5]">PCS LABORATORY</p>
           <CardTitle className="text-2xl text-[#0a4f7b]">Masuk ke PCS LIMS</CardTitle>
           <CardDescription>
-            Otentikasi mock untuk demo peran. Kata sandi semua akun:{" "}
-            <span className="font-medium text-[#183042]">{DEMO_PASSWORD}</span>
+            {mode === "live"
+              ? "Masuk dengan Supabase Auth. Peran diambil dari tabel profiles (id = auth.uid()), bukan dari pilihan di bawah."
+              : mode === "empty"
+                ? "Env Supabase belum ada. Anda dapat membuka pratinjau UI kosong, atau set NEXT_PUBLIC_USE_FIXTURES=true."
+                : <>
+                    Otentikasi mock (mode fixture). Kata sandi semua akun:{" "}
+                    <span className="font-medium text-[#183042]">{DEMO_PASSWORD}</span>
+                  </>}
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -98,22 +104,24 @@ export default function LoginPage() {
               Masuk
             </Button>
           </form>
-          <div className="mt-6 border-t border-[#dce7ee] pt-4">
-            <p className="mb-2 text-xs text-[#6b7d89]">Atau masuk langsung sebagai peran</p>
-            <div className="grid grid-cols-2 gap-2">
-              {ROLES.map((item) => (
-                <Button
-                  key={item}
-                  type="button"
-                  variant="outline"
-                  className="justify-start text-xs"
-                  onClick={() => loginAsRole(item)}
-                >
-                  {ROLE_LABELS[item]}
-                </Button>
-              ))}
+          {mode === "fixtures" ? (
+            <div className="mt-6 border-t border-[#dce7ee] pt-4">
+              <p className="mb-2 text-xs text-[#6b7d89]">Atau masuk langsung sebagai peran</p>
+              <div className="grid grid-cols-2 gap-2">
+                {ROLES.map((item) => (
+                  <Button
+                    key={item}
+                    type="button"
+                    variant="outline"
+                    className="justify-start text-xs"
+                    onClick={() => loginAsRole(item)}
+                  >
+                    {ROLE_LABELS[item]}
+                  </Button>
+                ))}
+              </div>
             </div>
-          </div>
+          ) : null}
         </CardContent>
       </Card>
     </div>

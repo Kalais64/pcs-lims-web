@@ -109,12 +109,12 @@ export default function InvoicesPage() {
                     </TableCell>
                     <TableCell className="space-x-2">
                       {canWrite && inv.status === "unpaid" ? (
-                        <Button size="sm" variant="outline" onClick={() => markInvoice(inv.id, "paid")}>
+                        <Button size="sm" variant="outline" onClick={() => void markInvoice(inv.id, "paid")}>
                           Tandai lunas
                         </Button>
                       ) : null}
                       {canWrite && inv.status !== "void" ? (
-                        <Button size="sm" variant="ghost" onClick={() => markInvoice(inv.id, "void")}>
+                        <Button size="sm" variant="ghost" onClick={() => void markInvoice(inv.id, "void")}>
                           Void
                         </Button>
                       ) : null}
@@ -134,9 +134,9 @@ export default function InvoicesPage() {
           ) : (
             <form
               className="grid gap-3 md:grid-cols-3"
-              onSubmit={(e) => {
+              onSubmit={async (e) => {
                 e.preventDefault();
-                const res = createInvoice(jobId, Number(amount));
+                const res = await createInvoice(jobId, Number(amount));
                 setMessage(res.ok ? "Invoice stub dibuat (unpaid)." : res.message);
               }}
             >
