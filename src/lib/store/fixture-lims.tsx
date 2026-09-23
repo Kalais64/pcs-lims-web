@@ -3,24 +3,51 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { nextInvoiceNo, nextJobNo, nextLhuNo, nextSampleNo, nowIso, uid } from "@/lib/domain/ids";
 import type {
+  AuditLog,
   Customer,
   CustomerSite,
   Invoice,
   Job,
   LhuRecord,
   LimsData,
+  Matrix,
   Method,
   Parameter,
   SampleFreeFields,
   SamplingEvent,
   TestResult,
-  Unit,
 } from "@/lib/domain/types";
 import type { SessionUser } from "@/lib/auth/types";
 import { SEED_DATA } from "@/lib/fixtures/seed";
 import { canFreeEditSample, SAMPLE_ARCHIVE_STATUSES } from "@/lib/status/sample-gate";
 import { withSyncedJob } from "@/lib/store/sync-job";
-import { LimsContext, type ActionResult, type LimsContextValue } from "@/lib/store/context";
+import {
+  LimsContext,
+  type ActionResult,
+  type LimsContextValue,
+  type MasterInput,
+  type MasterKind,
+} from "@/lib/store/context";
+
+function fixtureAudit(
+  actorId: string,
+  action: string,
+  tableName: string,
+  rowId: string,
+  oldData: Record<string, unknown> | null,
+  newData: Record<string, unknown> | null,
+): AuditLog {
+  return {
+    id: uid("aud"),
+    occurredAt: nowIso(),
+    actorId,
+    action,
+    tableName,
+    rowId,
+    oldData,
+    newData,
+  };
+}
 
 const STORAGE_KEY = "pcs-lims-data-v3";
 
@@ -256,17 +283,12 @@ export function FixtureLimsProvider({ children }: { children: React.ReactNode })
         samples: prev.samples.map((s) => (s.id === id ? { ...s, status: "archived" as const } : s)),
         auditLogs: [
           ...prev.auditLogs,
-          {
-            id: uid("aud"),
-            actorId: actor.id,
-            entityType: "sample",
-            entityId: id,
-            fromStatus: sample.status,
-            toStatus: "archived",
+          fixtureAudit(actor.id, "STATUS_TRANSITION", "samples", id, { status: sample.status }, {
+            from_status: sample.status,
+            to_status: "archived",
             override: false,
             reason: reason?.trim() || "Arsip sampel",
-            createdAt: nowIso(),
-          },
+          }),
         ],
       };
       return withSyncedJob(next, sample.jobId);
@@ -396,17 +418,12 @@ export function FixtureLimsProvider({ children }: { children: React.ReactNode })
         ),
         auditLogs: [
           ...prev.auditLogs,
-          {
-            id: uid("aud"),
-            actorId: actor.id,
-            entityType: "sample",
-            entityId: sampleId,
-            fromStatus: "pending_verify",
-            toStatus: "pending_approve",
+          fixtureAudit(actor.id, "STATUS_TRANSITION", "samples", sampleId, { status: "pending_verify" }, {
+            from_status: "pending_verify",
+            to_status: "pending_approve",
             override: false,
             reason: null,
-            createdAt: nowIso(),
-          },
+          }),
         ],
       };
       return withSyncedJob(next, sample.jobId);
@@ -451,17 +468,12 @@ export function FixtureLimsProvider({ children }: { children: React.ReactNode })
           ),
           auditLogs: [
             ...prev.auditLogs,
-            {
-              id: uid("aud"),
-              actorId: actor.id,
-              entityType: "sample",
-              entityId: sampleId,
-              fromStatus: from,
-              toStatus: "approved",
+            fixtureAudit(actor.id, "STATUS_TRANSITION", "samples", sampleId, { status: from }, {
+              from_status: from,
+              to_status: "approved",
               override: Boolean(skipVerify || override),
               reason: skipVerify || override ? "Admin override dual control" : null,
-              createdAt: nowIso(),
-            },
+            }),
           ],
         };
         return withSyncedJob(next, sample.jobId);
@@ -499,17 +511,12 @@ export function FixtureLimsProvider({ children }: { children: React.ReactNode })
           ),
           auditLogs: [
             ...prev.auditLogs,
-            {
-              id: uid("aud"),
-              actorId: actor.id,
-              entityType: "sample",
-              entityId: sampleId,
-              fromStatus: sample.status,
-              toStatus: "rejected",
+            fixtureAudit(actor.id, "STATUS_TRANSITION", "samples", sampleId, { status: sample.status }, {
+              from_status: sample.status,
+              to_status: "rejected",
               override: false,
               reason: reason.trim(),
-              createdAt: nowIso(),
-            },
+            }),
           ],
         };
         return withSyncedJob(next, sample.jobId);
@@ -552,17 +559,12 @@ export function FixtureLimsProvider({ children }: { children: React.ReactNode })
         lhuRecords: [...prev.lhuRecords, record],
         auditLogs: [
           ...prev.auditLogs,
-          {
-            id: uid("aud"),
-            actorId: actor.id,
-            entityType: "lhu",
-            entityId: record.id,
-            fromStatus: "draft",
-            toStatus: "issued",
+          fixtureAudit(actor.id, "STATUS_TRANSITION", "lhu_documents", record.id, { status: "draft" }, {
+            from_status: "draft",
+            to_status: "issued",
             override: false,
             reason: null,
-            createdAt: nowIso(),
-          },
+          }),
         ],
       };
       return withSyncedJob(next, jobId);
@@ -619,18 +621,62 @@ export function FixtureLimsProvider({ children }: { children: React.ReactNode })
     return { ok: true };
   }, []);
 
-  const upsertMaster = useCallback(
-    (kind: "matrices" | "parameters" | "methods" | "units", item: { id?: string; name: string }) => {
+  const saveMaster = useCallback(
+    (kind: MasterKind, item: MasterInput, actorId = ""): ActionResult => {
       setData((prev) => {
-        const list = prev[kind] as Array<MatrixLike>;
         const id = item.id ?? uid(kind.slice(0, 2));
-        const row = { id, name: item.name };
+        const nextRow = fixtureMasterRow(kind, id, item, prev);
+        const list = prev[kind] as Array<Matrix | Method | Parameter>;
         const exists = list.some((x) => x.id === id);
+        const old = exists ? (list.find((x) => x.id === id) as unknown as Record<string, unknown>) : null;
         return {
           ...prev,
-          [kind]: exists ? list.map((x) => (x.id === id ? row : x)) : [...list, row],
+          [kind]: exists ? list.map((x) => (x.id === id ? nextRow : x)) : [...list, nextRow],
+          auditLogs: [
+            ...prev.auditLogs,
+            fixtureAudit(
+              actorId,
+              exists ? "UPDATE" : "INSERT",
+              kind,
+              id,
+              old,
+              nextRow as unknown as Record<string, unknown>,
+            ),
+          ],
         };
       });
+      return { ok: true };
+    },
+    [],
+  );
+
+  const setMasterActive = useCallback(
+    (kind: MasterKind, id: string, isActive: boolean, actorId = ""): ActionResult => {
+      let message = "";
+      setData((prev) => {
+        const list = prev[kind] as Array<Matrix | Method | Parameter>;
+        const current = list.find((x) => x.id === id);
+        if (!current) {
+          message = "Baris master tidak ditemukan.";
+          return prev;
+        }
+        return {
+          ...prev,
+          [kind]: list.map((x) => (x.id === id ? { ...x, isActive } : x)),
+          auditLogs: [
+            ...prev.auditLogs,
+            fixtureAudit(
+              actorId,
+              "UPDATE",
+              kind,
+              id,
+              { is_active: current.isActive },
+              { is_active: isActive },
+            ),
+          ],
+        };
+      });
+      return message ? { ok: false, message } : { ok: true };
     },
     [],
   );
@@ -662,7 +708,8 @@ export function FixtureLimsProvider({ children }: { children: React.ReactNode })
       issueLhu,
       createInvoice,
       markInvoice,
-      upsertMaster,
+      saveMaster,
+      setMasterActive,
     }),
     [
       data,
@@ -686,11 +733,51 @@ export function FixtureLimsProvider({ children }: { children: React.ReactNode })
       issueLhu,
       createInvoice,
       markInvoice,
-      upsertMaster,
+      saveMaster,
+      setMasterActive,
     ],
   );
 
   return <LimsContext.Provider value={value}>{children}</LimsContext.Provider>;
 }
 
-type MatrixLike = Parameter | Method | Unit | { id: string; name: string };
+function fixtureMasterRow(
+  kind: MasterKind,
+  id: string,
+  item: MasterInput,
+  prev: LimsData,
+): Matrix | Method | Parameter {
+  if (kind === "matrices") {
+    const current = prev.matrices.find((row) => row.id === id);
+    return {
+      id,
+      code: item.code.trim(),
+      name: item.name.trim(),
+      description: item.description?.trim() ?? current?.description ?? "",
+      isActive: item.isActive ?? current?.isActive ?? true,
+    };
+  }
+  if (kind === "methods") {
+    const current = prev.methods.find((row) => row.id === id);
+    return {
+      id,
+      code: item.code.trim(),
+      name: item.name.trim(),
+      standardRef: item.standardRef?.trim() ?? current?.standardRef ?? "",
+      description: item.description?.trim() ?? current?.description ?? "",
+      isActive: item.isActive ?? current?.isActive ?? true,
+    };
+  }
+  const current = prev.parameters.find((row) => row.id === id);
+  return {
+    id,
+    code: item.code.trim(),
+    name: item.name.trim(),
+    unit: item.unit?.trim() || current?.unit,
+    methodId: item.methodId ?? current?.methodId ?? "",
+    matrixId: item.matrixId ?? current?.matrixId ?? "",
+    loq: item.loq ?? current?.loq ?? "",
+    bakuMutu: item.bakuMutu ?? current?.bakuMutu ?? "",
+    isActive: item.isActive ?? current?.isActive ?? true,
+  };
+}

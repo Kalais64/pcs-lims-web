@@ -13,6 +13,16 @@ export function pickNullable(row: Record<string, unknown>, keys: string[]): stri
   return value === "" ? null : value;
 }
 
+export function pickBool(row: Record<string, unknown>, keys: string[], fallback = true): boolean {
+  for (const key of keys) {
+    const value = row[key];
+    if (typeof value === "boolean") return value;
+    if (value === 1 || value === "1" || value === "true" || value === "t") return true;
+    if (value === 0 || value === "0" || value === "false" || value === "f") return false;
+  }
+  return fallback;
+}
+
 export function pickNumber(row: Record<string, unknown>, keys: string[], fallback = 0): number {
   for (const key of keys) {
     const value = row[key];

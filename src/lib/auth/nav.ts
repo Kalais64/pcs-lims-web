@@ -79,8 +79,8 @@ export const NAV_ITEMS: readonly NavItem[] = [
     roles: ["admin", "sales", "finance"],
   },
   {
-    href: "/master",
-    label: "Master Data",
+    href: "/admin",
+    label: "Admin",
     icon: "⚙",
     roles: ["admin"],
   },
@@ -91,6 +91,8 @@ const PATH_ALIASES: Record<string, string> = {
   "/customer/": "/customers",
   "/invoice": "/invoices",
   "/invoice/": "/invoices",
+  "/master": "/admin",
+  "/master/": "/admin",
 };
 
 export function canAccessPath(role: Role, pathname: string): boolean {

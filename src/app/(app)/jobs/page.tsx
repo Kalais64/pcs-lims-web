@@ -25,6 +25,7 @@ import {
 } from "@/components/ui/table";
 import { useAuth } from "@/lib/hooks/use-auth";
 import { JOB_STATUSES, JOB_STATUS_LABELS } from "@/lib/status/job";
+import { firstActiveId, optionsForForm } from "@/lib/domain/masters";
 import { useLims } from "@/lib/store/lims-provider";
 
 export default function JobsPage() {
@@ -36,7 +37,7 @@ export default function JobsPage() {
   const [form, setForm] = useState({
     customerId: data.customers[0]?.id ?? "",
     siteId: data.sites[0]?.id ?? "",
-    matrixId: data.matrices[0]?.id ?? "",
+    matrixId: firstActiveId(data.matrices),
     dueDate: "",
     scope: "",
   });
@@ -190,7 +191,7 @@ export default function JobsPage() {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  {data.matrices.map((m) => (
+                  {optionsForForm(data.matrices, [form.matrixId]).map((m) => (
                     <SelectItem key={m.id} value={m.id}>
                       {m.name}
                     </SelectItem>

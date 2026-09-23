@@ -1,8 +1,22 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { isForbiddenTable, missingColumnName, stripForbiddenColumns } from "@/lib/data/forbidden";
+import {
+  AUDIT_SELECT,
+  MATRIX_SELECT,
+  METHOD_SELECT,
+  PARAMETER_SELECT,
+} from "@/lib/data/master-schema";
 import { SAMPLE_SELECT } from "@/lib/data/samples-schema";
 
 export { SAMPLE_SELECT } from "@/lib/data/samples-schema";
+
+const SELECT_BY_KEY: Partial<Record<keyof typeof TABLE_CANDIDATES, string>> = {
+  samples: SAMPLE_SELECT,
+  matrices: MATRIX_SELECT,
+  methods: METHOD_SELECT,
+  parameters: PARAMETER_SELECT,
+  audit: AUDIT_SELECT,
+};
 
 /** Locked public schema names — no HTTP probes, no alias fallbacks. */
 export const TABLE_CANDIDATES = {
@@ -31,7 +45,7 @@ export function resolveTable(key: keyof typeof TABLE_CANDIDATES) {
 
 export async function selectAll(client: SupabaseClient, key: keyof typeof TABLE_CANDIDATES) {
   const table = resolveTable(key);
-  const select = key === "samples" ? SAMPLE_SELECT : "*";
+  const select = SELECT_BY_KEY[key] ?? "*";
   const { data, error } = await client.from(table).select(select);
   if (error) throw new Error(error.message);
   return { table, data };

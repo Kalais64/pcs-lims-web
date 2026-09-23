@@ -21,6 +21,7 @@ import { useAuth } from "@/lib/hooks/use-auth";
 import { canFreeEditSample, criticalFieldsLocked, submitTarget } from "@/lib/status/sample-gate";
 import { staffName, useLims } from "@/lib/store/lims-provider";
 import type { ActionResult } from "@/lib/store/context";
+import { optionsForForm } from "@/lib/domain/masters";
 import { fromLocalInput, safeIso, toLocalInput } from "@/lib/datetime";
 
 export default function SampleDetailPage() {
@@ -229,7 +230,7 @@ export default function SampleDetailPage() {
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                {data.matrices.map((m) => (
+                {optionsForForm(data.matrices, [form.matrixId]).map((m) => (
                   <SelectItem key={m.id} value={m.id}>
                     {m.name}
                   </SelectItem>
