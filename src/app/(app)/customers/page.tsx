@@ -67,7 +67,7 @@ export default function CustomersPage() {
             <TableBody>
               {customers.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={3} className="text-[#6b7d89]">
+                  <TableCell colSpan={3} className="text-[#5d7266]">
                     Tidak ada customer.
                   </TableCell>
                 </TableRow>
@@ -75,14 +75,14 @@ export default function CustomersPage() {
                 customers.map((c) => (
                   <TableRow
                     key={c.id}
-                    className={selectedId === c.id ? "bg-[#eef7fb]" : "cursor-pointer"}
+                    className={selectedId === c.id ? "bg-[#e7f4ec]" : "cursor-pointer"}
                     onClick={() => setSelectedId(c.id)}
                   >
                     <TableCell className="font-medium">{c.companyName}</TableCell>
                     <TableCell>{c.pic}</TableCell>
                     <TableCell>
                       {c.email}
-                      <div className="text-xs text-[#6b7d89]">{c.phone}</div>
+                      <div className="text-xs text-[#5d7266]">{c.phone}</div>
                     </TableCell>
                   </TableRow>
                 ))
@@ -131,7 +131,7 @@ export default function CustomersPage() {
                     onChange={(e) => setForm({ ...form, address: e.target.value })}
                   />
                 </Field>
-                <Button type="submit" className="bg-[#168cc5] hover:bg-[#0a4f7b]">
+                <Button type="submit" className="bg-[#1f8a4c] hover:bg-[#146338]">
                   Simpan Customer
                 </Button>
               </form>
@@ -151,7 +151,7 @@ export default function CustomersPage() {
                   <TableBody>
                     {sites.length === 0 ? (
                       <TableRow>
-                        <TableCell colSpan={2} className="text-[#6b7d89]">
+                        <TableCell colSpan={2} className="text-[#5d7266]">
                           Belum ada site.
                         </TableCell>
                       </TableRow>
@@ -186,14 +186,14 @@ export default function CustomersPage() {
                       value={siteForm.address}
                       onChange={(e) => setSiteForm({ ...siteForm, address: e.target.value })}
                     />
-                    <Button type="submit" className="bg-[#168cc5] hover:bg-[#0a4f7b]">
+                    <Button type="submit" className="bg-[#1f8a4c] hover:bg-[#146338]">
                       Tambah site
                     </Button>
                   </form>
                 ) : null}
               </div>
             ) : (
-              <p className="text-sm text-[#6b7d89]">Pilih customer untuk melihat site.</p>
+              <p className="text-sm text-[#5d7266]">Pilih customer untuk melihat site.</p>
             )}
           </Panel>
         </div>

@@ -17,7 +17,7 @@ export function DataBanner() {
         : null);
   if (!text) return null;
   return (
-    <div className="mb-4 rounded-[10px] border border-[#cde6f1] bg-[#eef7fb] px-3.5 py-2 text-sm text-[#0a4f7b]">
+    <div className="mb-4 rounded-[10px] border border-[#c4ddce] bg-[#e7f4ec] px-3.5 py-2 text-sm text-[#146338]">
       {text}
     </div>
   );

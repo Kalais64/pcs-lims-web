@@ -157,7 +157,7 @@ export default function SamplesPage() {
                         />
                         <Button
                           size="sm"
-                          className="bg-[#168cc5] hover:bg-[#0a4f7b]"
+                          className="bg-[#1f8a4c] hover:bg-[#146338]"
                           onClick={async () => {
                             const iso = rec.at ? new Date(rec.at).toISOString() : new Date().toISOString();
                             const res = await receiveSample(s.id, iso, rec.notes);
@@ -230,7 +230,7 @@ export default function SamplesPage() {
                 </SelectContent>
               </Select>
             </div>
-            <Button type="submit" className="self-end bg-[#168cc5] hover:bg-[#0a4f7b]">
+            <Button type="submit" className="self-end bg-[#1f8a4c] hover:bg-[#146338]">
               Buat Sample ID
             </Button>
           </form>

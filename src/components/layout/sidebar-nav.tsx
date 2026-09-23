@@ -9,7 +9,7 @@ import { cn } from "@/lib/utils";
 export function SidebarBrand() {
   return (
     <div className="mb-7 flex items-center gap-2.5">
-      <div className="flex h-[58px] w-[58px] shrink-0 items-center justify-center rounded-xl bg-white text-sm font-bold leading-tight text-[#0a4f7b]">
+      <div className="flex h-[58px] w-[58px] shrink-0 items-center justify-center rounded-xl bg-white text-sm font-bold leading-tight text-[#146338]">
         PCS
       </div>
       <div>
@@ -34,7 +34,7 @@ export function SidebarNav({ user, onNavigate }: { user: SessionUser; onNavigate
             href={item.href}
             onClick={onNavigate}
             className={cn(
-              "rounded-[9px] px-3.5 py-3 text-left text-sm text-[#e8f7ff] transition-colors",
+              "rounded-[9px] px-3.5 py-3 text-left text-sm text-[#e8f7ee] transition-colors",
               active || "hover:bg-white/16",
               active && "bg-white/16",
             )}

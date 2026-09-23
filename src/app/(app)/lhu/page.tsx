@@ -71,7 +71,7 @@ export default function LhuPage() {
           <TableBody>
             {rows.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={6} className="text-[#6b7d89]">
+                <TableCell colSpan={6} className="text-[#5d7266]">
                   Belum ada LHU.
                 </TableCell>
               </TableRow>
@@ -101,7 +101,7 @@ export default function LhuPage() {
 
       <Panel title="Terbitkan LHU">
         {readyJobs.length === 0 ? (
-          <p className="text-sm text-[#6b7d89]">Tidak ada job berstatus Siap LHU.</p>
+          <p className="text-sm text-[#5d7266]">Tidak ada job berstatus Siap LHU.</p>
         ) : (
           <ul className="space-y-2">
             {readyJobs.map((job) => (
@@ -110,7 +110,7 @@ export default function LhuPage() {
                   {job.jobNo} · {data.customers.find((c) => c.id === job.customerId)?.companyName}
                 </span>
                 <Button
-                  className="bg-[#168cc5] hover:bg-[#0a4f7b]"
+                  className="bg-[#1f8a4c] hover:bg-[#146338]"
                   onClick={async () => {
                     if (!user) return;
                     const res = await issueLhu(job.id, user);
@@ -123,7 +123,7 @@ export default function LhuPage() {
             ))}
           </ul>
         )}
-        {message ? <p className="mt-3 text-sm text-[#0a4f7b]">{message}</p> : null}
+        {message ? <p className="mt-3 text-sm text-[#146338]">{message}</p> : null}
       </Panel>
     </div>
   );

@@ -52,15 +52,15 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   if (!user) return null;
 
   return (
-    <div className="min-h-screen bg-[#f4f8fb] text-[#183042] lg:grid lg:grid-cols-[235px_1fr]">
-      <aside className="hidden bg-[linear-gradient(180deg,#073f66,#0b6d9e)] px-4 py-[22px] text-white lg:block">
+    <div className="min-h-screen bg-[#f6faf7] text-[#12281c] lg:grid lg:grid-cols-[235px_1fr]">
+      <aside className="hidden bg-[linear-gradient(180deg,#0c3d2c,#1a7a45)] px-4 py-[22px] text-white lg:block">
         <SidebarBody user={user} onLogout={logout} />
       </aside>
 
       <div className="flex min-h-screen flex-col">
-        <div className="flex items-center justify-between border-b border-[#dce7ee] bg-white px-4 py-3 lg:hidden">
-          <div className="flex items-center gap-2 text-sm font-semibold text-[#0a4f7b]">
-            <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#0a4f7b] text-[10px] text-white">
+        <div className="flex items-center justify-between border-b border-[#d5e4da] bg-white px-4 py-3 lg:hidden">
+          <div className="flex items-center gap-2 text-sm font-semibold text-[#146338]">
+            <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#146338] text-[10px] text-white">
               PCS
             </span>
             PCS LIMS
@@ -79,7 +79,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         <Sheet open={open} onOpenChange={setOpen}>
           <SheetContent
             side="left"
-            className="w-[260px] border-0 bg-[linear-gradient(180deg,#073f66,#0b6d9e)] p-4 text-white [&>button]:text-white"
+            className="w-[260px] border-0 bg-[linear-gradient(180deg,#0c3d2c,#1a7a45)] p-4 text-white [&>button]:text-white"
           >
             <SheetHeader className="sr-only">
               <SheetTitle>Menu PCS LIMS</SheetTitle>
@@ -90,7 +90,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
         <main className="flex-1 px-4 py-6 sm:px-6 lg:p-[26px]">
           <div className="mb-4 flex flex-wrap items-center justify-end gap-2">
-            <div className="rounded-[10px] border border-[#dce7ee] bg-white px-3.5 py-2 text-sm text-[#183042]">
+            <div className="rounded-[10px] border border-[#d5e4da] bg-white px-3.5 py-2 text-sm text-[#12281c]">
               {user.name} · {ROLE_LABELS[user.role]}
             </div>
             {mode === "fixtures" ? (
@@ -115,7 +115,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                 </SelectContent>
               </Select>
             ) : (
-              <div className="rounded-[10px] border border-[#dce7ee] bg-[#eef7fb] px-3.5 py-2 text-xs text-[#0a4f7b]">
+              <div className="rounded-[10px] border border-[#d5e4da] bg-[#e7f4ec] px-3.5 py-2 text-xs text-[#146338]">
                 Peran dari profiles · auth.uid()
               </div>
             )}

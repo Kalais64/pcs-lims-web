@@ -45,11 +45,11 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-[linear-gradient(180deg,#073f66,#0b6d9e)] px-4 py-10">
+    <div className="flex min-h-screen items-center justify-center bg-[linear-gradient(180deg,#0c3d2c,#1a7a45)] px-4 py-10">
       <Card className="w-full max-w-md border-0 shadow-xl">
         <CardHeader className="space-y-1">
-          <p className="text-xs font-semibold tracking-wide text-[#168cc5]">PCS LABORATORY</p>
-          <CardTitle className="text-2xl text-[#0a4f7b]">Masuk ke PCS LIMS</CardTitle>
+          <p className="text-xs font-semibold tracking-wide text-[#1f8a4c]">PCS LABORATORY</p>
+          <CardTitle className="text-2xl text-[#146338]">Masuk ke PCS LIMS</CardTitle>
           <CardDescription>
             {mode === "live"
               ? "Masuk dengan Supabase Auth. Peran diambil dari tabel profiles (id = auth.uid()), bukan dari pilihan di bawah."
@@ -57,7 +57,7 @@ export default function LoginPage() {
                 ? "Env Supabase belum ada. Anda dapat membuka pratinjau UI kosong, atau set NEXT_PUBLIC_USE_FIXTURES=true."
                 : <>
                     Otentikasi mock (mode fixture). Kata sandi semua akun:{" "}
-                    <span className="font-medium text-[#183042]">{DEMO_PASSWORD}</span>
+                    <span className="font-medium text-[#12281c]">{DEMO_PASSWORD}</span>
                   </>}
           </CardDescription>
         </CardHeader>
@@ -77,7 +77,7 @@ export default function LoginPage() {
                   ))}
                 </SelectContent>
               </Select>
-              <p className="text-xs text-[#6b7d89]">Akun demo: {hint}</p>
+              <p className="text-xs text-[#5d7266]">Akun demo: {hint}</p>
             </div>
             <div className="space-y-2">
               <Label htmlFor="email">Email</Label>
@@ -100,13 +100,13 @@ export default function LoginPage() {
               />
             </div>
             {error ? <p className="text-sm text-red-600">{error}</p> : null}
-            <Button type="submit" className="w-full bg-[#168cc5] hover:bg-[#0a4f7b]">
+            <Button type="submit" className="w-full bg-[#1f8a4c] hover:bg-[#146338]">
               Masuk
             </Button>
           </form>
           {mode === "fixtures" ? (
-            <div className="mt-6 border-t border-[#dce7ee] pt-4">
-              <p className="mb-2 text-xs text-[#6b7d89]">Atau masuk langsung sebagai peran</p>
+            <div className="mt-6 border-t border-[#d5e4da] pt-4">
+              <p className="mb-2 text-xs text-[#5d7266]">Atau masuk langsung sebagai peran</p>
               <div className="grid grid-cols-2 gap-2">
                 {ROLES.map((item) => (
                   <Button

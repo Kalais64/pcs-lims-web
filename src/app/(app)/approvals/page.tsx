@@ -50,7 +50,7 @@ export default function ApprovalsPage() {
         title="Verifikasi & Approval"
         description="Dual control: Verify (Review) lalu Approve oleh dua pengguna berbeda. Override Admin tercatat di audit."
       />
-      <div className="flex flex-wrap items-center gap-2 text-sm text-[#6b7d89]">
+      <div className="flex flex-wrap items-center gap-2 text-sm text-[#5d7266]">
         <span>Anda: {user?.name}</span>
         {mode === "fixtures" ? (
           <>
@@ -97,7 +97,7 @@ export default function ApprovalsPage() {
           <TableBody>
             {rows.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={7} className="text-[#6b7d89]">
+                <TableCell colSpan={7} className="text-[#5d7266]">
                   Tidak ada sampel di filter ini.
                 </TableCell>
               </TableRow>
@@ -112,7 +112,7 @@ export default function ApprovalsPage() {
                     <TableCell>{job?.jobNo}</TableCell>
                     <TableCell>
                       {results.length} parameter
-                      <div className="text-xs text-[#6b7d89]">
+                      <div className="text-xs text-[#5d7266]">
                         {results
                           .map((r) => data.parameters.find((p) => p.id === r.parameterId)?.name)
                           .filter(Boolean)
@@ -122,7 +122,7 @@ export default function ApprovalsPage() {
                     <TableCell>{actorName(analyst ?? null)}</TableCell>
                     <TableCell>
                       <StatusBadge entity="sample" status={s.status} />
-                      <div className="mt-1 text-[11px] text-[#6b7d89]">
+                      <div className="mt-1 text-[11px] text-[#5d7266]">
                         Verify: {actorName(s.verifiedById)}
                       </div>
                     </TableCell>
@@ -130,7 +130,7 @@ export default function ApprovalsPage() {
                       {s.status === "pending_verify" ? (
                         <Button
                           size="sm"
-                          className="bg-[#168cc5] hover:bg-[#0a4f7b]"
+                          className="bg-[#1f8a4c] hover:bg-[#146338]"
                           onClick={async () => {
                             if (!user) return;
                             const res = await verifySample(s.id, user);
@@ -181,8 +181,8 @@ export default function ApprovalsPage() {
             )}
           </TableBody>
         </Table>
-        {message ? <p className="mt-3 text-sm text-[#0a4f7b]">{message}</p> : null}
-        <p className="mt-3 text-xs text-[#6b7d89]">
+        {message ? <p className="mt-3 text-sm text-[#146338]">{message}</p> : null}
+        <p className="mt-3 text-xs text-[#5d7266]">
           Tombol mockup “Review” dipetakan ke Verify. Approve oleh user yang sama dengan
           verifier akan ditolak, kecuali Admin mencentang override (aksi Approve saat masih
           pending_verify sebagai Admin).

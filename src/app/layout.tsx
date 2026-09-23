@@ -44,7 +44,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
       lang="id"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
-      <body className="min-h-full bg-[#f4f8fb] font-sans text-[#183042]">
+      <body className="min-h-full bg-[#f6faf7] font-sans text-[#12281c]">
         <AppProviders initialUser={initialUser}>{children}</AppProviders>
       </body>
     </html>

@@ -47,7 +47,7 @@ export default function MasterPage() {
           <Button
             key={t.key}
             variant={tab === t.key ? "default" : "outline"}
-            className={tab === t.key ? "bg-[#168cc5] hover:bg-[#0a4f7b]" : ""}
+            className={tab === t.key ? "bg-[#1f8a4c] hover:bg-[#146338]" : ""}
             onClick={() => setTab(t.key)}
           >
             {t.label}
@@ -69,7 +69,7 @@ export default function MasterPage() {
             value={name}
             onChange={(e) => setName(e.target.value)}
           />
-          <Button type="submit" className="bg-[#168cc5] hover:bg-[#0a4f7b]">
+          <Button type="submit" className="bg-[#1f8a4c] hover:bg-[#146338]">
             Tambah
           </Button>
         </form>
@@ -84,7 +84,7 @@ export default function MasterPage() {
             {list.map((item) => (
               <TableRow key={item.id}>
                 <TableCell>{item.name}</TableCell>
-                <TableCell className="text-xs text-[#6b7d89]">{item.id}</TableCell>
+                <TableCell className="text-xs text-[#5d7266]">{item.id}</TableCell>
               </TableRow>
             ))}
           </TableBody>

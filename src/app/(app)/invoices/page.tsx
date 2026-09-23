@@ -51,14 +51,14 @@ export default function InvoicesPage() {
       />
       <div className="grid gap-3 sm:grid-cols-2">
         <Panel>
-          <small className="text-[#6b7d89]">Outstanding (unpaid)</small>
-          <div className="mt-1 text-[27px] font-bold text-[#0a4f7b]">
+          <small className="text-[#5d7266]">Outstanding (unpaid)</small>
+          <div className="mt-1 text-[27px] font-bold text-[#146338]">
             Rp {unpaid.toLocaleString("id-ID")}
           </div>
         </Panel>
         <Panel>
-          <small className="text-[#6b7d89]">Lunas</small>
-          <div className="mt-1 text-[27px] font-bold text-[#0a4f7b]">
+          <small className="text-[#5d7266]">Lunas</small>
+          <div className="mt-1 text-[27px] font-bold text-[#146338]">
             Rp {paid.toLocaleString("id-ID")}
           </div>
         </Panel>
@@ -92,7 +92,7 @@ export default function InvoicesPage() {
           <TableBody>
             {rows.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={5} className="text-[#6b7d89]">
+                <TableCell colSpan={5} className="text-[#5d7266]">
                   Belum ada invoice.
                 </TableCell>
               </TableRow>
@@ -130,7 +130,7 @@ export default function InvoicesPage() {
       {canWrite ? (
         <Panel title="Buat invoice dari job (setelah LHU)">
           {eligible.length === 0 ? (
-            <p className="text-sm text-[#6b7d89]">Tidak ada job berstatus LHU terbit.</p>
+            <p className="text-sm text-[#5d7266]">Tidak ada job berstatus LHU terbit.</p>
           ) : (
             <form
               className="grid gap-3 md:grid-cols-3"
@@ -159,12 +159,12 @@ export default function InvoicesPage() {
                 <Label>Nominal (Rp)</Label>
                 <Input value={amount} onChange={(e) => setAmount(e.target.value)} />
               </div>
-              <Button type="submit" className="self-end bg-[#168cc5] hover:bg-[#0a4f7b]">
+              <Button type="submit" className="self-end bg-[#1f8a4c] hover:bg-[#146338]">
                 Buat invoice
               </Button>
             </form>
           )}
-          {message ? <p className="mt-3 text-sm text-[#0a4f7b]">{message}</p> : null}
+          {message ? <p className="mt-3 text-sm text-[#146338]">{message}</p> : null}
         </Panel>
       ) : null}
     </div>
