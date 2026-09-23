@@ -283,32 +283,29 @@ export default function AdminMasterPage() {
               </TableRow>
             ) : (
               rows.map((row) => {
-                const methodName =
-                  tab === "parameters"
-                    ? data.methods.find((item) => item.id === ("methodId" in row ? row.methodId : ""))
-                        ?.name
-                    : "";
-                const matrixName =
-                  tab === "parameters"
-                    ? data.matrices.find((item) => item.id === ("matrixId" in row ? row.matrixId : ""))
-                        ?.name
-                    : "";
+                const parameter = tab === "parameters" ? data.parameters.find((item) => item.id === row.id) : undefined;
+                const method = tab === "methods" ? data.methods.find((item) => item.id === row.id) : undefined;
+                const matrix = tab === "matrices" ? data.matrices.find((item) => item.id === row.id) : undefined;
+                const methodName = parameter
+                  ? data.methods.find((item) => item.id === parameter.methodId)?.name
+                  : "";
+                const matrixName = parameter
+                  ? data.matrices.find((item) => item.id === parameter.matrixId)?.name
+                  : "";
                 return (
                   <TableRow key={row.id}>
-                    <TableCell className="font-medium">{"code" in row ? row.code : ""}</TableCell>
+                    <TableCell className="font-medium">{row.code}</TableCell>
                     <TableCell>{row.name}</TableCell>
-                    {tab === "methods" ? (
-                      <TableCell>{"standardRef" in row ? row.standardRef : ""}</TableCell>
-                    ) : null}
+                    {tab === "methods" ? <TableCell>{method?.standardRef || "—"}</TableCell> : null}
                     {tab === "parameters" ? (
                       <>
-                        <TableCell>{"unit" in row ? row.unit || "—" : "—"}</TableCell>
+                        <TableCell>{parameter?.unit || "—"}</TableCell>
                         <TableCell>{methodName || "—"}</TableCell>
                         <TableCell>{matrixName || "—"}</TableCell>
                       </>
                     ) : (
                       <TableCell className="max-w-[220px] truncate">
-                        {"description" in row ? row.description || "—" : "—"}
+                        {matrix?.description || method?.description || "—"}
                       </TableCell>
                     )}
                     <TableCell>
