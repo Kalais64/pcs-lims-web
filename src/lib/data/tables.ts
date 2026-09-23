@@ -57,11 +57,18 @@ function dropColumn(payload: Record<string, unknown>, column: string) {
   return next;
 }
 
+function assertClientWritable(key: keyof typeof TABLE_CANDIDATES) {
+  if (key === "audit") {
+    throw new Error("audit_logs append-only: tulis dari klien dilarang.");
+  }
+}
+
 export async function insertRow(
   client: SupabaseClient,
   key: keyof typeof TABLE_CANDIDATES,
   payloads: Record<string, unknown>[],
 ) {
+  assertClientWritable(key);
   const table = resolveTable(key);
   let last = "Insert gagal.";
   for (const raw of payloads) {
@@ -87,6 +94,7 @@ export async function updateRow(
   id: string,
   payloads: Record<string, unknown>[],
 ) {
+  assertClientWritable(key);
   const table = resolveTable(key);
   let last = "Update gagal.";
   for (const raw of payloads) {
@@ -112,6 +120,7 @@ export async function deleteWhere(
   column: string,
   value: string,
 ) {
+  assertClientWritable(key);
   const table = resolveTable(key);
   const { error } = await client.from(table).delete().eq(column, value);
   if (error) throw new Error(error.message);

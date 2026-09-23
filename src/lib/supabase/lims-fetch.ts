@@ -25,12 +25,35 @@ function blockedResponse() {
   });
 }
 
+function blockedAuditWrite() {
+  return new Response(
+    JSON.stringify({ message: "audit_logs append-only", code: "AUDIT_APPEND_ONLY" }),
+    {
+      status: 403,
+      headers: { "Content-Type": "application/json; charset=utf-8" },
+    },
+  );
+}
+
+function requestMethod(init?: RequestInit, input?: RequestInfo | URL): string {
+  if (init?.method) return init.method.toUpperCase();
+  if (input instanceof Request) return input.method.toUpperCase();
+  return "GET";
+}
+
 /** Drop units / lab_samples / sample_records at the wire. Rewrite samples GET select. */
 export function limsFetch(input: RequestInfo | URL, init?: RequestInit): Promise<Response> {
   const raw = requestUrl(input);
   const table = restTable(raw);
   if (table && BLOCKED_TABLES.has(table)) {
     return Promise.resolve(blockedResponse());
+  }
+
+  if (table === "audit_logs") {
+    const method = requestMethod(init, input);
+    if (method !== "GET" && method !== "HEAD") {
+      return Promise.resolve(blockedAuditWrite());
+    }
   }
 
   if (table === "samples") {

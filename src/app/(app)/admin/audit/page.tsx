@@ -82,7 +82,7 @@ export default function AdminAuditPage() {
     <div className="space-y-5">
       <PageHeader
         title="Jejak audit"
-        description="Read-only. Transisi sampel, override, dan perubahan master — tanpa ubah atau hapus baris."
+        description="Append-only (kunci produk). Hanya baca + filter. Tidak ada ubah, hapus, kosongkan, reset, atau arsip baris — termasuk untuk Admin."
       />
       <AdminSubnav />
       <Panel title="Filter">
@@ -142,8 +142,8 @@ export default function AdminAuditPage() {
         {dateError ? <p className="mt-2 text-sm text-red-600">{dateError}</p> : null}
       </Panel>
 
-      <Panel title="Riwayat">
-        <Table>
+      <Panel title="Riwayat (hanya baca)">
+        <Table aria-readonly="true">
           <TableHeader>
             <TableRow>
               <TableHead>Waktu (WIB)</TableHead>
