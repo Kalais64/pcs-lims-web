@@ -22,6 +22,13 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "PCS LIMS",
   description: "Sistem informasi laboratorium lingkungan PCS Laboratory",
+  icons: {
+    icon: [
+      { url: "/favicon.png", type: "image/png" },
+      { url: "/pcs-lims-icon.png", type: "image/png" },
+    ],
+    apple: "/pcs-lims-icon.png",
+  },
 };
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {

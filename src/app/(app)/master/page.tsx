@@ -47,7 +47,7 @@ export default function MasterPage() {
           <Button
             key={t.key}
             variant={tab === t.key ? "default" : "outline"}
-            className={tab === t.key ? "bg-[#1f8a4c] hover:bg-[#146338]" : ""}
+            className={tab === t.key ? "bg-[#16A34A] hover:bg-[#14532D]" : ""}
             onClick={() => setTab(t.key)}
           >
             {t.label}
@@ -69,7 +69,7 @@ export default function MasterPage() {
             value={name}
             onChange={(e) => setName(e.target.value)}
           />
-          <Button type="submit" className="bg-[#1f8a4c] hover:bg-[#146338]">
+          <Button type="submit" className="bg-[#16A34A] hover:bg-[#14532D]">
             Tambah
           </Button>
         </form>

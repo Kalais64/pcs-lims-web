@@ -15,6 +15,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
+import { PcsIcon, PcsWordmark } from "@/components/brand/pcs-mark";
 import { DataBanner } from "@/components/layout/data-banner";
 import { SidebarBrand, SidebarNav } from "@/components/layout/sidebar-nav";
 
@@ -53,17 +54,15 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
   return (
     <div className="min-h-screen bg-[#f6faf7] text-[#12281c] lg:grid lg:grid-cols-[235px_1fr]">
-      <aside className="hidden bg-[linear-gradient(180deg,#0c3d2c,#1a7a45)] px-4 py-[22px] text-white lg:block">
+      <aside className="hidden bg-[linear-gradient(180deg,#14532D,#16A34A)] px-4 py-[22px] text-white lg:block">
         <SidebarBody user={user} onLogout={logout} />
       </aside>
 
       <div className="flex min-h-screen flex-col">
         <div className="flex items-center justify-between border-b border-[#d5e4da] bg-white px-4 py-3 lg:hidden">
-          <div className="flex items-center gap-2 text-sm font-semibold text-[#146338]">
-            <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#146338] text-[10px] text-white">
-              PCS
-            </span>
-            PCS LIMS
+          <div className="flex items-center gap-2">
+            <PcsIcon size={32} />
+            <PcsWordmark height={28} className="max-h-7 max-w-[180px]" />
           </div>
           <Button
             type="button"
@@ -79,7 +78,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         <Sheet open={open} onOpenChange={setOpen}>
           <SheetContent
             side="left"
-            className="w-[260px] border-0 bg-[linear-gradient(180deg,#0c3d2c,#1a7a45)] p-4 text-white [&>button]:text-white"
+            className="w-[260px] border-0 bg-[linear-gradient(180deg,#14532D,#16A34A)] p-4 text-white [&>button]:text-white"
           >
             <SheetHeader className="sr-only">
               <SheetTitle>Menu PCS LIMS</SheetTitle>
@@ -89,36 +88,39 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         </Sheet>
 
         <main className="flex-1 px-4 py-6 sm:px-6 lg:p-[26px]">
-          <div className="mb-4 flex flex-wrap items-center justify-end gap-2">
-            <div className="rounded-[10px] border border-[#d5e4da] bg-white px-3.5 py-2 text-sm text-[#12281c]">
-              {user.name} · {ROLE_LABELS[user.role]}
-            </div>
-            {mode === "fixtures" ? (
-              <Select
-                value={user.role}
-                onValueChange={(role) => {
-                  switchRole(role as typeof user.role);
-                  if (!canAccessPath(role as typeof user.role, pathname)) {
-                    router.replace("/dashboard");
-                  }
-                }}
-              >
-                <SelectTrigger className="w-[170px] bg-white" aria-label="Ganti peran demo">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {ROLES.map((role) => (
-                    <SelectItem key={role} value={role}>
-                      {ROLE_LABELS[role]}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            ) : (
-              <div className="rounded-[10px] border border-[#d5e4da] bg-[#e7f4ec] px-3.5 py-2 text-xs text-[#146338]">
-                Peran dari profiles · auth.uid()
+          <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+            <PcsWordmark height={40} className="hidden max-h-10 lg:block" />
+            <div className="ml-auto flex flex-wrap items-center justify-end gap-2">
+              <div className="rounded-[10px] border border-[#d5e4da] bg-white px-3.5 py-2 text-sm text-[#12281c]">
+                {user.name} · {ROLE_LABELS[user.role]}
               </div>
-            )}
+              {mode === "fixtures" ? (
+                <Select
+                  value={user.role}
+                  onValueChange={(role) => {
+                    switchRole(role as typeof user.role);
+                    if (!canAccessPath(role as typeof user.role, pathname)) {
+                      router.replace("/dashboard");
+                    }
+                  }}
+                >
+                  <SelectTrigger className="w-[170px] bg-white" aria-label="Ganti peran demo">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {ROLES.map((role) => (
+                      <SelectItem key={role} value={role}>
+                        {ROLE_LABELS[role]}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              ) : (
+                <div className="rounded-[10px] border border-[#d5e4da] bg-[#e7f4ec] px-3.5 py-2 text-xs text-[#14532D]">
+                  Peran dari profiles · auth.uid()
+                </div>
+              )}
+            </div>
           </div>
           <DataBanner />
           {children}

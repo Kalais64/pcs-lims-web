@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { PcsIcon } from "@/components/brand/pcs-mark";
 import { navItemsForRole } from "@/lib/auth/nav";
 import { ROLE_LABELS, type SessionUser } from "@/lib/auth/types";
 import { cn } from "@/lib/utils";
@@ -9,12 +10,10 @@ import { cn } from "@/lib/utils";
 export function SidebarBrand() {
   return (
     <div className="mb-7 flex items-center gap-2.5">
-      <div className="flex h-[58px] w-[58px] shrink-0 items-center justify-center rounded-xl bg-white text-sm font-bold leading-tight text-[#146338]">
-        PCS
-      </div>
+      <PcsIcon size={52} />
       <div>
         <b className="block text-[19px] leading-none">PCS LIMS</b>
-        <small className="mt-[3px] block text-xs text-white/75">PCS Laboratory</small>
+        <small className="mt-[3px] block text-xs text-white/75">Laboratorium Lingkungan</small>
       </div>
     </div>
   );

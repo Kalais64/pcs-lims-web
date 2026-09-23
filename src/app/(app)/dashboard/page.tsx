@@ -96,7 +96,7 @@ export default function DashboardPage() {
                 {recentJobs.map((job) => (
                   <TableRow key={job.jobNo}>
                     <TableCell className="font-medium">
-                      <Link href="/jobs" className="text-[#146338] hover:underline">
+                      <Link href="/jobs" className="text-[#14532D] hover:underline">
                         {job.jobNo}
                       </Link>
                     </TableCell>
@@ -145,7 +145,7 @@ export default function DashboardPage() {
         <CardContent className="flex flex-wrap items-center gap-2">
           {WORKFLOW_STEPS.map((step, index) => (
             <span key={step} className="flex items-center gap-2">
-              <span className="rounded-lg border border-[#c4ddce] bg-[#e7f4ec] px-2.5 py-2 text-xs text-[#146338]">
+              <span className="rounded-lg border border-[#c4ddce] bg-[#e7f4ec] px-2.5 py-2 text-xs text-[#14532D]">
                 {step}
               </span>
               {index < WORKFLOW_STEPS.length - 1 ? (
@@ -164,7 +164,7 @@ function KpiCard({ label, value, hint }: { label: string; value: number; hint: s
     <Card className="border-[#d5e4da] shadow-[0_3px_12px_#14301c0b]">
       <CardContent className="pt-5">
         <small className="text-[#5d7266]">{label}</small>
-        <div className="my-1 text-[27px] font-bold text-[#146338]">{value}</div>
+        <div className="my-1 text-[27px] font-bold text-[#14532D]">{value}</div>
         <small className="text-[#5d7266]">{hint}</small>
       </CardContent>
     </Card>

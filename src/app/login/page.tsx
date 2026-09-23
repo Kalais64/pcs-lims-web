@@ -12,6 +12,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { PcsWordmark } from "@/components/brand/pcs-mark";
 import { ROLE_LABELS, ROLES, type Role } from "@/lib/auth/types";
 import { DEMO_PASSWORD, DEMO_USERS } from "@/lib/fixtures/users";
 import { useAuth } from "@/lib/hooks/use-auth";
@@ -45,11 +46,11 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-[linear-gradient(180deg,#0c3d2c,#1a7a45)] px-4 py-10">
+    <div className="flex min-h-screen items-center justify-center bg-[linear-gradient(180deg,#14532D,#16A34A)] px-4 py-10">
       <Card className="w-full max-w-md border-0 shadow-xl">
-        <CardHeader className="space-y-1">
-          <p className="text-xs font-semibold tracking-wide text-[#1f8a4c]">PCS LABORATORY</p>
-          <CardTitle className="text-2xl text-[#146338]">Masuk ke PCS LIMS</CardTitle>
+        <CardHeader className="space-y-3">
+          <PcsWordmark height={48} className="max-h-12" />
+          <CardTitle className="text-2xl text-[#14532D]">Masuk ke PCS LIMS</CardTitle>
           <CardDescription>
             {mode === "live"
               ? "Masuk dengan Supabase Auth. Peran diambil dari tabel profiles (id = auth.uid()), bukan dari pilihan di bawah."
@@ -100,7 +101,7 @@ export default function LoginPage() {
               />
             </div>
             {error ? <p className="text-sm text-red-600">{error}</p> : null}
-            <Button type="submit" className="w-full bg-[#1f8a4c] hover:bg-[#146338]">
+            <Button type="submit" className="w-full bg-[#16A34A] hover:bg-[#14532D]">
               Masuk
             </Button>
           </form>

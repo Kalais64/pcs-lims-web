@@ -181,7 +181,7 @@ export default function SamplingPage() {
               onChange={(e) => setForm({ ...form, petugas: e.target.value })}
             />
           </div>
-          <Button type="submit" className="bg-[#1f8a4c] hover:bg-[#146338]">
+          <Button type="submit" className="bg-[#16A34A] hover:bg-[#14532D]">
             Simpan jadwal
           </Button>
         </form>

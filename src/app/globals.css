@@ -60,10 +60,10 @@
 
 :root {
   /* Waresys-inspired lab ERP: green + white only */
-  --pcs-nav-from: #0c3d2c;
-  --pcs-nav-to: #1a7a45;
-  --pcs-primary: #1f8a4c;
-  --pcs-primary-hover: #146338;
+  --pcs-nav-from: #14532D;
+  --pcs-nav-to: #16A34A;
+  --pcs-primary: #16A34A;
+  --pcs-primary-hover: #14532D;
   --pcs-ink: #12281c;
   --pcs-muted: #5d7266;
   --pcs-surface: #f6faf7;

@@ -52,13 +52,13 @@ export default function InvoicesPage() {
       <div className="grid gap-3 sm:grid-cols-2">
         <Panel>
           <small className="text-[#5d7266]">Outstanding (unpaid)</small>
-          <div className="mt-1 text-[27px] font-bold text-[#146338]">
+          <div className="mt-1 text-[27px] font-bold text-[#14532D]">
             Rp {unpaid.toLocaleString("id-ID")}
           </div>
         </Panel>
         <Panel>
           <small className="text-[#5d7266]">Lunas</small>
-          <div className="mt-1 text-[27px] font-bold text-[#146338]">
+          <div className="mt-1 text-[27px] font-bold text-[#14532D]">
             Rp {paid.toLocaleString("id-ID")}
           </div>
         </Panel>
@@ -159,12 +159,12 @@ export default function InvoicesPage() {
                 <Label>Nominal (Rp)</Label>
                 <Input value={amount} onChange={(e) => setAmount(e.target.value)} />
               </div>
-              <Button type="submit" className="self-end bg-[#1f8a4c] hover:bg-[#146338]">
+              <Button type="submit" className="self-end bg-[#16A34A] hover:bg-[#14532D]">
                 Buat invoice
               </Button>
             </form>
           )}
-          {message ? <p className="mt-3 text-sm text-[#146338]">{message}</p> : null}
+          {message ? <p className="mt-3 text-sm text-[#14532D]">{message}</p> : null}
         </Panel>
       ) : null}
     </div>

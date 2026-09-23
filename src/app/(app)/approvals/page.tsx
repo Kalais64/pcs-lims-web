@@ -130,7 +130,7 @@ export default function ApprovalsPage() {
                       {s.status === "pending_verify" ? (
                         <Button
                           size="sm"
-                          className="bg-[#1f8a4c] hover:bg-[#146338]"
+                          className="bg-[#16A34A] hover:bg-[#14532D]"
                           onClick={async () => {
                             if (!user) return;
                             const res = await verifySample(s.id, user);
@@ -181,7 +181,7 @@ export default function ApprovalsPage() {
             )}
           </TableBody>
         </Table>
-        {message ? <p className="mt-3 text-sm text-[#146338]">{message}</p> : null}
+        {message ? <p className="mt-3 text-sm text-[#14532D]">{message}</p> : null}
         <p className="mt-3 text-xs text-[#5d7266]">
           Tombol mockup “Review” dipetakan ke Verify. Approve oleh user yang sama dengan
           verifier akan ditolak, kecuali Admin mencentang override (aksi Approve saat masih

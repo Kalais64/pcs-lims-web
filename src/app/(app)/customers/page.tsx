@@ -131,7 +131,7 @@ export default function CustomersPage() {
                     onChange={(e) => setForm({ ...form, address: e.target.value })}
                   />
                 </Field>
-                <Button type="submit" className="bg-[#1f8a4c] hover:bg-[#146338]">
+                <Button type="submit" className="bg-[#16A34A] hover:bg-[#14532D]">
                   Simpan Customer
                 </Button>
               </form>
@@ -186,7 +186,7 @@ export default function CustomersPage() {
                       value={siteForm.address}
                       onChange={(e) => setSiteForm({ ...siteForm, address: e.target.value })}
                     />
-                    <Button type="submit" className="bg-[#1f8a4c] hover:bg-[#146338]">
+                    <Button type="submit" className="bg-[#16A34A] hover:bg-[#14532D]">
                       Tambah site
                     </Button>
                   </form>

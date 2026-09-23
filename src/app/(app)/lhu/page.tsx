@@ -110,7 +110,7 @@ export default function LhuPage() {
                   {job.jobNo} · {data.customers.find((c) => c.id === job.customerId)?.companyName}
                 </span>
                 <Button
-                  className="bg-[#1f8a4c] hover:bg-[#146338]"
+                  className="bg-[#16A34A] hover:bg-[#14532D]"
                   onClick={async () => {
                     if (!user) return;
                     const res = await issueLhu(job.id, user);
@@ -123,7 +123,7 @@ export default function LhuPage() {
             ))}
           </ul>
         )}
-        {message ? <p className="mt-3 text-sm text-[#146338]">{message}</p> : null}
+        {message ? <p className="mt-3 text-sm text-[#14532D]">{message}</p> : null}
       </Panel>
     </div>
   );

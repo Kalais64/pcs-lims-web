@@ -204,7 +204,7 @@ export default function TestingPage() {
           </Button>
           <div className="flex flex-wrap gap-2">
             <Button
-              className="bg-[#1f8a4c] hover:bg-[#146338]"
+              className="bg-[#16A34A] hover:bg-[#14532D]"
               onClick={async () => {
                 if (!user) return;
                 const res = await saveResults(
@@ -232,7 +232,7 @@ export default function TestingPage() {
               Kirim ke verifikasi
             </Button>
           </div>
-          {message ? <p className="text-sm text-[#146338]">{message}</p> : null}
+          {message ? <p className="text-sm text-[#14532D]">{message}</p> : null}
         </div>
       </Panel>
     </div>
