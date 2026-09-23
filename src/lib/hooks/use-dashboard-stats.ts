@@ -15,7 +15,7 @@ const ACTIVE_JOB = new Set([
 ]);
 
 export function useDashboardStats() {
-  const { data } = useLims();
+  const { data, isLoading } = useLims();
 
   return useMemo(() => {
     const today = new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Jakarta" }).format(new Date());
@@ -57,7 +57,7 @@ export function useDashboardStats() {
         lhuPending: data.jobs.filter((j) => j.status === "lhu_ready").length,
       },
       recentJobs,
-      isLoading: false,
+      isLoading,
     };
   }, [data]);
 }

@@ -50,7 +50,7 @@ export default function TestingPage() {
     return data.parameters.slice(0, 4).map((p, i) => ({
       parameterId: p.id,
       methodId: data.methods[i]?.id ?? data.methods[0]?.id ?? "",
-      unitId: p.id === "p-ph" ? "u-ph" : "u-mgl",
+      unitId: p.unit || data.units[0]?.id || "",
       result: "",
     }));
   }, [sampleId, data.parameters, data.methods, existing.length]);
@@ -73,7 +73,7 @@ export default function TestingPage() {
         data.parameters.slice(0, 4).map((p, i) => ({
           parameterId: p.id,
           methodId: data.methods[i]?.id ?? data.methods[0]?.id ?? "",
-          unitId: p.id === "p-ph" ? "u-ph" : "u-mgl",
+          unitId: p.unit || data.units[0]?.id || "",
           result: "",
         })),
       );
@@ -204,10 +204,10 @@ export default function TestingPage() {
           </Button>
           <div className="flex flex-wrap gap-2">
             <Button
-              className="bg-[#168cc5] hover:bg-[#0a4f7b]"
-              onClick={() => {
+              className="bg-[#16A34A] hover:bg-[#14532D]"
+              onClick={async () => {
                 if (!user) return;
-                const res = saveResults(
+                const res = await saveResults(
                   sampleId,
                   rows.map((r) => ({
                     ...r,
@@ -224,15 +224,15 @@ export default function TestingPage() {
             </Button>
             <Button
               variant="outline"
-              onClick={() => {
-                const res = submitForVerify(sampleId);
+              onClick={async () => {
+                const res = await submitForVerify(sampleId);
                 setMessage(res.ok ? "Dikirim ke verifikasi." : res.message);
               }}
             >
               Kirim ke verifikasi
             </Button>
           </div>
-          {message ? <p className="text-sm text-[#0a4f7b]">{message}</p> : null}
+          {message ? <p className="text-sm text-[#14532D]">{message}</p> : null}
         </div>
       </Panel>
     </div>

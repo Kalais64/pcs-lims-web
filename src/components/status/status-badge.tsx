@@ -14,31 +14,31 @@ type StatusBadgeProps =
   | { entity: "sampling"; status: SamplingStatus; className?: string };
 
 const TONE: Record<string, string> = {
-  draft: "bg-[#eef3f6] text-[#4a6070]",
-  scheduled: "bg-[#e7f5fb] text-[#0877a9]",
-  sampling: "bg-[#e7f5fb] text-[#0877a9]",
-  expected: "bg-[#eef3f6] text-[#4a6070]",
-  received: "bg-[#e7f5fb] text-[#0877a9]",
-  testing: "bg-[#e7f5fb] text-[#0877a9]",
-  in_testing: "bg-[#e7f5fb] text-[#0877a9]",
+  draft: "bg-[#eef4f0] text-[#4a6054]",
+  scheduled: "bg-[#e7f4ec] text-[#14532D]",
+  sampling: "bg-[#e7f4ec] text-[#14532D]",
+  expected: "bg-[#eef4f0] text-[#4a6054]",
+  received: "bg-[#e7f4ec] text-[#14532D]",
+  testing: "bg-[#e7f4ec] text-[#14532D]",
+  in_testing: "bg-[#e7f4ec] text-[#14532D]",
   verification: "bg-[#fff4d6] text-[#8a6500]",
   pending_verify: "bg-[#fff4d6] text-[#8a6500]",
   approval: "bg-[#fff4d6] text-[#8a6500]",
   pending_approve: "bg-[#fff4d6] text-[#8a6500]",
-  lhu_ready: "bg-[#e8f7ee] text-[#1a7a45]",
-  lhu_issued: "bg-[#e8f7ee] text-[#1a7a45]",
-  issued: "bg-[#e8f7ee] text-[#1a7a45]",
-  approved: "bg-[#e8f7ee] text-[#1a7a45]",
-  invoiced: "bg-[#f0e8fb] text-[#5b3d8f]",
+  lhu_ready: "bg-[#e8f7ee] text-[#16A34A]",
+  lhu_issued: "bg-[#e8f7ee] text-[#16A34A]",
+  issued: "bg-[#e8f7ee] text-[#16A34A]",
+  approved: "bg-[#e8f7ee] text-[#16A34A]",
+  invoiced: "bg-[#e7f4ec] text-[#14532D]",
   unpaid: "bg-[#fff4d6] text-[#8a6500]",
-  paid: "bg-[#e8f7ee] text-[#1a7a45]",
-  closed: "bg-[#eef3f6] text-[#4a6070]",
-  done: "bg-[#e8f7ee] text-[#1a7a45]",
+  paid: "bg-[#e8f7ee] text-[#16A34A]",
+  closed: "bg-[#eef4f0] text-[#4a6054]",
+  done: "bg-[#e8f7ee] text-[#16A34A]",
   cancelled: "bg-[#fde8e8] text-[#a12626]",
   rejected: "bg-[#fde8e8] text-[#a12626]",
   void: "bg-[#fde8e8] text-[#a12626]",
-  archived: "bg-[#eef3f6] text-[#4a6070]",
-  superseded: "bg-[#eef3f6] text-[#4a6070]",
+  archived: "bg-[#eef4f0] text-[#4a6054]",
+  superseded: "bg-[#eef4f0] text-[#4a6054]",
 };
 
 function labelFor(props: StatusBadgeProps): string {
@@ -61,7 +61,7 @@ export function StatusBadge(props: StatusBadgeProps) {
     <Badge
       className={cn(
         "rounded-full border-0 hover:bg-inherit",
-        TONE[props.status] ?? "bg-[#e7f5fb] text-[#0877a9]",
+        TONE[props.status] ?? "bg-[#e7f4ec] text-[#14532D]",
         props.className,
       )}
     >

@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { PageHeader } from "@/components/lims/page-header";
 import { Panel } from "@/components/lims/panel";
 import { StatusBadge } from "@/components/status/status-badge";
@@ -40,6 +40,11 @@ export default function SamplesPage() {
     matrixId: data.jobs[0]?.matrixId ?? data.matrices[0]?.id ?? "",
   });
   const [receive, setReceive] = useState<Record<string, { at: string; notes: string }>>({});
+  const [nowLocal, setNowLocal] = useState("");
+
+  useEffect(() => {
+    setNowLocal(new Date().toISOString().slice(0, 16));
+  }, []);
 
   const rows = useMemo(
     () =>
@@ -114,11 +119,19 @@ export default function SamplesPage() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {rows.map((s) => {
+            {rows.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={7} className="text-[#5d7266]">
+                  Tidak ada sampel. Jika seed Backend ada (mis. PCS-S-260923-001), periksa RLS SELECT
+                  pada tabel samples.
+                </TableCell>
+              </TableRow>
+            ) : (
+            rows.map((s) => {
               const job = data.jobs.find((j) => j.id === s.jobId);
               const matrix = data.matrices.find((m) => m.id === s.matrixId);
               const rec = receive[s.id] ?? {
-                at: new Date().toISOString().slice(0, 16),
+                at: nowLocal,
                 notes: s.conditionNotes,
               };
               return (
@@ -152,10 +165,10 @@ export default function SamplesPage() {
                         />
                         <Button
                           size="sm"
-                          className="bg-[#168cc5] hover:bg-[#0a4f7b]"
-                          onClick={() => {
+                          className="bg-[#16A34A] hover:bg-[#14532D]"
+                          onClick={async () => {
                             const iso = rec.at ? new Date(rec.at).toISOString() : new Date().toISOString();
-                            const res = receiveSample(s.id, iso, rec.notes);
+                            const res = await receiveSample(s.id, iso, rec.notes);
                             setError(res.ok ? null : res.message);
                           }}
                         >
@@ -168,7 +181,8 @@ export default function SamplesPage() {
                   </TableCell>
                 </TableRow>
               );
-            })}
+            })
+            )}
           </TableBody>
         </Table>
         {error ? <p className="mt-2 text-sm text-red-600">{error}</p> : null}
@@ -225,7 +239,7 @@ export default function SamplesPage() {
                 </SelectContent>
               </Select>
             </div>
-            <Button type="submit" className="self-end bg-[#168cc5] hover:bg-[#0a4f7b]">
+            <Button type="submit" className="self-end bg-[#16A34A] hover:bg-[#14532D]">
               Buat Sample ID
             </Button>
           </form>

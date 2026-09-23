@@ -104,7 +104,7 @@ export default function JobsPage() {
           <TableBody>
             {jobs.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={7} className="text-[#6b7d89]">
+                <TableCell colSpan={7} className="text-[#5d7266]">
                   Tidak ada job.
                 </TableCell>
               </TableRow>
@@ -125,7 +125,7 @@ export default function JobsPage() {
                     </TableCell>
                     <TableCell>
                       {canWrite && job.status === "draft" ? (
-                        <Button size="sm" variant="outline" onClick={() => scheduleJob(job.id)}>
+                        <Button size="sm" variant="outline" onClick={() => void scheduleJob(job.id)}>
                           Jadwalkan
                         </Button>
                       ) : null}
@@ -214,7 +214,7 @@ export default function JobsPage() {
                 />
               </Field>
             </div>
-            <Button type="submit" className="bg-[#168cc5] hover:bg-[#0a4f7b]">
+            <Button type="submit" className="bg-[#16A34A] hover:bg-[#14532D]">
               Buat Job
             </Button>
           </form>

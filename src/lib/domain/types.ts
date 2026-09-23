@@ -1,8 +1,16 @@
+import type { Role } from "@/lib/auth/types";
 import type { InvoiceStatus } from "@/lib/status/invoice";
 import type { JobStatus } from "@/lib/status/job";
 import type { LhuStatus } from "@/lib/status/lhu";
 import type { SampleStatus } from "@/lib/status/sample";
 import type { SamplingStatus } from "@/lib/status/sampling";
+
+export type StaffProfile = {
+  id: string;
+  name: string;
+  email: string;
+  role: Role;
+};
 
 export type Customer = {
   id: string;
@@ -21,7 +29,7 @@ export type CustomerSite = {
 };
 
 export type Matrix = { id: string; name: string };
-export type Parameter = { id: string; name: string };
+export type Parameter = { id: string; name: string; unit?: string };
 export type Method = { id: string; name: string };
 export type Unit = { id: string; name: string };
 
@@ -117,4 +125,5 @@ export type LimsData = {
   lhuRecords: LhuRecord[];
   invoices: Invoice[];
   auditLogs: AuditLog[];
+  profiles: StaffProfile[];
 };

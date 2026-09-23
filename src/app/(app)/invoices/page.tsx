@@ -51,14 +51,14 @@ export default function InvoicesPage() {
       />
       <div className="grid gap-3 sm:grid-cols-2">
         <Panel>
-          <small className="text-[#6b7d89]">Outstanding (unpaid)</small>
-          <div className="mt-1 text-[27px] font-bold text-[#0a4f7b]">
+          <small className="text-[#5d7266]">Outstanding (unpaid)</small>
+          <div className="mt-1 text-[27px] font-bold text-[#14532D]">
             Rp {unpaid.toLocaleString("id-ID")}
           </div>
         </Panel>
         <Panel>
-          <small className="text-[#6b7d89]">Lunas</small>
-          <div className="mt-1 text-[27px] font-bold text-[#0a4f7b]">
+          <small className="text-[#5d7266]">Lunas</small>
+          <div className="mt-1 text-[27px] font-bold text-[#14532D]">
             Rp {paid.toLocaleString("id-ID")}
           </div>
         </Panel>
@@ -92,7 +92,7 @@ export default function InvoicesPage() {
           <TableBody>
             {rows.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={5} className="text-[#6b7d89]">
+                <TableCell colSpan={5} className="text-[#5d7266]">
                   Belum ada invoice.
                 </TableCell>
               </TableRow>
@@ -109,12 +109,12 @@ export default function InvoicesPage() {
                     </TableCell>
                     <TableCell className="space-x-2">
                       {canWrite && inv.status === "unpaid" ? (
-                        <Button size="sm" variant="outline" onClick={() => markInvoice(inv.id, "paid")}>
+                        <Button size="sm" variant="outline" onClick={() => void markInvoice(inv.id, "paid")}>
                           Tandai lunas
                         </Button>
                       ) : null}
                       {canWrite && inv.status !== "void" ? (
-                        <Button size="sm" variant="ghost" onClick={() => markInvoice(inv.id, "void")}>
+                        <Button size="sm" variant="ghost" onClick={() => void markInvoice(inv.id, "void")}>
                           Void
                         </Button>
                       ) : null}
@@ -130,13 +130,13 @@ export default function InvoicesPage() {
       {canWrite ? (
         <Panel title="Buat invoice dari job (setelah LHU)">
           {eligible.length === 0 ? (
-            <p className="text-sm text-[#6b7d89]">Tidak ada job berstatus LHU terbit.</p>
+            <p className="text-sm text-[#5d7266]">Tidak ada job berstatus LHU terbit.</p>
           ) : (
             <form
               className="grid gap-3 md:grid-cols-3"
-              onSubmit={(e) => {
+              onSubmit={async (e) => {
                 e.preventDefault();
-                const res = createInvoice(jobId, Number(amount));
+                const res = await createInvoice(jobId, Number(amount));
                 setMessage(res.ok ? "Invoice stub dibuat (unpaid)." : res.message);
               }}
             >
@@ -159,12 +159,12 @@ export default function InvoicesPage() {
                 <Label>Nominal (Rp)</Label>
                 <Input value={amount} onChange={(e) => setAmount(e.target.value)} />
               </div>
-              <Button type="submit" className="self-end bg-[#168cc5] hover:bg-[#0a4f7b]">
+              <Button type="submit" className="self-end bg-[#16A34A] hover:bg-[#14532D]">
                 Buat invoice
               </Button>
             </form>
           )}
-          {message ? <p className="mt-3 text-sm text-[#0a4f7b]">{message}</p> : null}
+          {message ? <p className="mt-3 text-sm text-[#14532D]">{message}</p> : null}
         </Panel>
       ) : null}
     </div>

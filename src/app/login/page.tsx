@@ -12,12 +12,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { PcsWordmark } from "@/components/brand/pcs-mark";
 import { ROLE_LABELS, ROLES, type Role } from "@/lib/auth/types";
 import { DEMO_PASSWORD, DEMO_USERS } from "@/lib/fixtures/users";
 import { useAuth } from "@/lib/hooks/use-auth";
 
 export default function LoginPage() {
-  const { login, loginAsRole } = useAuth();
+  const { login, loginAsRole, mode } = useAuth();
   const [role, setRole] = useState<Role>("admin");
   const [email, setEmail] = useState(DEMO_USERS[0].email);
   const [password, setPassword] = useState(DEMO_PASSWORD);
@@ -38,21 +39,27 @@ export default function LoginPage() {
     setError(null);
   }
 
-  function onSubmit(event: React.FormEvent) {
+  async function onSubmit(event: React.FormEvent) {
     event.preventDefault();
-    const result = login(email, password, role);
+    const result = await login(email, password, role);
     if (!result.ok) setError(result.message);
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-[linear-gradient(180deg,#073f66,#0b6d9e)] px-4 py-10">
+    <div className="flex min-h-screen items-center justify-center bg-[linear-gradient(180deg,#14532D,#16A34A)] px-4 py-10">
       <Card className="w-full max-w-md border-0 shadow-xl">
-        <CardHeader className="space-y-1">
-          <p className="text-xs font-semibold tracking-wide text-[#168cc5]">PCS LABORATORY</p>
-          <CardTitle className="text-2xl text-[#0a4f7b]">Masuk ke PCS LIMS</CardTitle>
+        <CardHeader className="space-y-3">
+          <PcsWordmark height={48} className="max-h-12" />
+          <CardTitle className="text-2xl text-[#14532D]">Masuk ke PCS LIMS</CardTitle>
           <CardDescription>
-            Otentikasi mock untuk demo peran. Kata sandi semua akun:{" "}
-            <span className="font-medium text-[#183042]">{DEMO_PASSWORD}</span>
+            {mode === "live"
+              ? "Masuk dengan Supabase Auth. Peran diambil dari tabel profiles (id = auth.uid()), bukan dari pilihan di bawah."
+              : mode === "empty"
+                ? "Env Supabase belum ada. Anda dapat membuka pratinjau UI kosong, atau set NEXT_PUBLIC_USE_FIXTURES=true."
+                : <>
+                    Otentikasi mock (mode fixture). Kata sandi semua akun:{" "}
+                    <span className="font-medium text-[#12281c]">{DEMO_PASSWORD}</span>
+                  </>}
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -71,7 +78,7 @@ export default function LoginPage() {
                   ))}
                 </SelectContent>
               </Select>
-              <p className="text-xs text-[#6b7d89]">Akun demo: {hint}</p>
+              <p className="text-xs text-[#5d7266]">Akun demo: {hint}</p>
             </div>
             <div className="space-y-2">
               <Label htmlFor="email">Email</Label>
@@ -94,26 +101,28 @@ export default function LoginPage() {
               />
             </div>
             {error ? <p className="text-sm text-red-600">{error}</p> : null}
-            <Button type="submit" className="w-full bg-[#168cc5] hover:bg-[#0a4f7b]">
+            <Button type="submit" className="w-full bg-[#16A34A] hover:bg-[#14532D]">
               Masuk
             </Button>
           </form>
-          <div className="mt-6 border-t border-[#dce7ee] pt-4">
-            <p className="mb-2 text-xs text-[#6b7d89]">Atau masuk langsung sebagai peran</p>
-            <div className="grid grid-cols-2 gap-2">
-              {ROLES.map((item) => (
-                <Button
-                  key={item}
-                  type="button"
-                  variant="outline"
-                  className="justify-start text-xs"
-                  onClick={() => loginAsRole(item)}
-                >
-                  {ROLE_LABELS[item]}
-                </Button>
-              ))}
+          {mode === "fixtures" ? (
+            <div className="mt-6 border-t border-[#d5e4da] pt-4">
+              <p className="mb-2 text-xs text-[#5d7266]">Atau masuk langsung sebagai peran</p>
+              <div className="grid grid-cols-2 gap-2">
+                {ROLES.map((item) => (
+                  <Button
+                    key={item}
+                    type="button"
+                    variant="outline"
+                    className="justify-start text-xs"
+                    onClick={() => loginAsRole(item)}
+                  >
+                    {ROLE_LABELS[item]}
+                  </Button>
+                ))}
+              </div>
             </div>
-          </div>
+          ) : null}
         </CardContent>
       </Card>
     </div>

@@ -16,14 +16,14 @@ import {
 import { useLims } from "@/lib/store/lims-provider";
 
 const TABS = [
-  { key: "matrices", label: "Matriks" },
-  { key: "parameters", label: "Parameter" },
-  { key: "methods", label: "Metode" },
-  { key: "units", label: "Satuan" },
+  { key: "matrices", label: "Matriks", writable: true },
+  { key: "parameters", label: "Parameter", writable: true },
+  { key: "methods", label: "Metode", writable: true },
+  { key: "units", label: "Satuan", writable: false },
 ] as const;
 
 export default function MasterPage() {
-  const { data, upsertMaster, resetDemo } = useLims();
+  const { data, upsertMaster, resetDemo, mode } = useLims();
   const [tab, setTab] = useState<(typeof TABS)[number]["key"]>("matrices");
   const [name, setName] = useState("");
 
@@ -35,9 +35,11 @@ export default function MasterPage() {
         title="Master Data"
         description="CRUD matriks, parameter, metode, dan satuan untuk worksheet pengujian."
         actions={
-          <Button variant="outline" onClick={resetDemo}>
-            Reset data demo
-          </Button>
+          mode === "fixtures" ? (
+            <Button variant="outline" onClick={resetDemo}>
+              Reset data demo
+            </Button>
+          ) : null
         }
       />
       <div className="flex flex-wrap gap-2">
@@ -45,7 +47,7 @@ export default function MasterPage() {
           <Button
             key={t.key}
             variant={tab === t.key ? "default" : "outline"}
-            className={tab === t.key ? "bg-[#168cc5] hover:bg-[#0a4f7b]" : ""}
+            className={tab === t.key ? "bg-[#16A34A] hover:bg-[#14532D]" : ""}
             onClick={() => setTab(t.key)}
           >
             {t.label}
@@ -53,24 +55,31 @@ export default function MasterPage() {
         ))}
       </div>
       <Panel title={TABS.find((t) => t.key === tab)?.label}>
-        <form
-          className="mb-4 flex gap-2"
-          onSubmit={(e) => {
-            e.preventDefault();
-            if (!name.trim()) return;
-            upsertMaster(tab, { name: name.trim() });
-            setName("");
-          }}
-        >
-          <Input
-            placeholder={`Nama ${TABS.find((t) => t.key === tab)?.label.toLowerCase()}`}
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-          />
-          <Button type="submit" className="bg-[#168cc5] hover:bg-[#0a4f7b]">
-            Tambah
-          </Button>
-        </form>
+        {tab === "units" ? (
+          <p className="mb-4 text-sm text-[#5d7266]">
+            Satuan tidak punya tabel master di Backend. Daftar ini diambil dari kolom satuan
+            pada parameter.
+          </p>
+        ) : (
+          <form
+            className="mb-4 flex gap-2"
+            onSubmit={(e) => {
+              e.preventDefault();
+              if (!name.trim()) return;
+              upsertMaster(tab, { name: name.trim() });
+              setName("");
+            }}
+          >
+            <Input
+              placeholder={`Nama ${TABS.find((t) => t.key === tab)?.label.toLowerCase()}`}
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+            />
+            <Button type="submit" className="bg-[#16A34A] hover:bg-[#14532D]">
+              Tambah
+            </Button>
+          </form>
+        )}
         <Table>
           <TableHeader>
             <TableRow>
@@ -82,7 +91,7 @@ export default function MasterPage() {
             {list.map((item) => (
               <TableRow key={item.id}>
                 <TableCell>{item.name}</TableCell>
-                <TableCell className="text-xs text-[#6b7d89]">{item.id}</TableCell>
+                <TableCell className="text-xs text-[#5d7266]">{item.id}</TableCell>
               </TableRow>
             ))}
           </TableBody>

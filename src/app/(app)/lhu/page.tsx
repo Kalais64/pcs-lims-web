@@ -20,10 +20,9 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { DEMO_USERS } from "@/lib/fixtures/users";
 import { useAuth } from "@/lib/hooks/use-auth";
 import { LHU_STATUSES, LHU_STATUS_LABELS } from "@/lib/status/lhu";
-import { useLims } from "@/lib/store/lims-provider";
+import { staffName, useLims } from "@/lib/store/lims-provider";
 
 export default function LhuPage() {
   const { user } = useAuth();
@@ -72,20 +71,20 @@ export default function LhuPage() {
           <TableBody>
             {rows.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={6} className="text-[#6b7d89]">
+                <TableCell colSpan={6} className="text-[#5d7266]">
                   Belum ada LHU.
                 </TableCell>
               </TableRow>
             ) : (
               rows.map((l) => {
                 const job = data.jobs.find((j) => j.id === l.jobId);
-                const issuer = DEMO_USERS.find((u) => u.id === l.issuerId);
+                const issuerName = staffName(data, l.issuerId);
                 return (
                   <TableRow key={l.id}>
                     <TableCell className="font-medium">{l.lhuNo}</TableCell>
                     <TableCell>{job?.jobNo}</TableCell>
                     <TableCell>{l.revision}</TableCell>
-                    <TableCell>{issuer?.name ?? l.issuerId}</TableCell>
+                    <TableCell>{issuerName}</TableCell>
                     <TableCell>
                       {l.issuedAt ? new Date(l.issuedAt).toLocaleString("id-ID") : "—"}
                     </TableCell>
@@ -102,7 +101,7 @@ export default function LhuPage() {
 
       <Panel title="Terbitkan LHU">
         {readyJobs.length === 0 ? (
-          <p className="text-sm text-[#6b7d89]">Tidak ada job berstatus Siap LHU.</p>
+          <p className="text-sm text-[#5d7266]">Tidak ada job berstatus Siap LHU.</p>
         ) : (
           <ul className="space-y-2">
             {readyJobs.map((job) => (
@@ -111,10 +110,10 @@ export default function LhuPage() {
                   {job.jobNo} · {data.customers.find((c) => c.id === job.customerId)?.companyName}
                 </span>
                 <Button
-                  className="bg-[#168cc5] hover:bg-[#0a4f7b]"
-                  onClick={() => {
+                  className="bg-[#16A34A] hover:bg-[#14532D]"
+                  onClick={async () => {
                     if (!user) return;
-                    const res = issueLhu(job.id, user);
+                    const res = await issueLhu(job.id, user);
                     setMessage(res.ok ? `LHU diterbitkan untuk ${job.jobNo}.` : res.message);
                   }}
                 >
@@ -124,7 +123,7 @@ export default function LhuPage() {
             ))}
           </ul>
         )}
-        {message ? <p className="mt-3 text-sm text-[#0a4f7b]">{message}</p> : null}
+        {message ? <p className="mt-3 text-sm text-[#14532D]">{message}</p> : null}
       </Panel>
     </div>
   );

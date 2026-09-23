@@ -10,7 +10,7 @@ export function Panel({
   className?: string;
 }) {
   return (
-    <Card className={`border-[#dce7ee] shadow-[0_3px_12px_#15384b0b] ${className ?? ""}`}>
+    <Card className={`border-[#d5e4da] shadow-[0_3px_12px_#14301c0b] ${className ?? ""}`}>
       {title ? (
         <CardHeader className="pb-2">
           <CardTitle className="text-[17px]">{title}</CardTitle>

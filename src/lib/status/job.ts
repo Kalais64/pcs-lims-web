@@ -31,3 +31,27 @@ export const JOB_STATUS_LABELS: Record<JobStatus, string> = {
   closed: "Ditutup",
   cancelled: "Dibatalkan",
 };
+
+const JOB_STATUS_ALIASES: Record<string, JobStatus> = {
+  draft: "draft",
+  scheduled: "scheduled",
+  sampling: "sampling",
+  in_progress: "sampling",
+  received: "received",
+  testing: "testing",
+  verification: "verification",
+  pending_verification: "verification",
+  approval: "approval",
+  pending_approval: "approval",
+  lhu_ready: "lhu_ready",
+  ready_for_lhu: "lhu_ready",
+  lhu_issued: "lhu_issued",
+  invoiced: "invoiced",
+  closed: "closed",
+  cancelled: "cancelled",
+  canceled: "cancelled",
+};
+
+export function normalizeJobStatus(value: string, fallback: JobStatus = "draft"): JobStatus {
+  return JOB_STATUS_ALIASES[value] ?? fallback;
+}

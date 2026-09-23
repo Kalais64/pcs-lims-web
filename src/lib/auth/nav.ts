@@ -86,9 +86,15 @@ export const NAV_ITEMS: readonly NavItem[] = [
   },
 ];
 
+const PATH_ALIASES: Record<string, string> = {
+  "/customer": "/customers",
+  "/invoice": "/invoices",
+};
+
 export function canAccessPath(role: Role, pathname: string): boolean {
+  const resolved = PATH_ALIASES[pathname] ?? pathname;
   const item = NAV_ITEMS.find(
-    (nav) => pathname === nav.href || pathname.startsWith(`${nav.href}/`),
+    (nav) => resolved === nav.href || resolved.startsWith(`${nav.href}/`),
   );
   if (!item) return true;
   return item.roles.includes(role);
