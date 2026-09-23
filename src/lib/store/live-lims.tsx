@@ -17,6 +17,15 @@ import { createBrowserSupabase } from "@/lib/supabase/browser";
 import { deriveJobStatus } from "@/lib/store/sync-job";
 import { LimsContext, type ActionResult, type LimsContextValue, type MasterInput, type MasterKind } from "@/lib/store/context";
 import type { RuntimeMode } from "@/lib/config/runtime";
+import {
+  canChangeJobCustomer,
+  canEditJobDueOrScope,
+  canEditJobSite,
+  canFreeEditJob,
+  isSamplingOrLater,
+  isValidDueDate,
+  jobActionsFor,
+} from "@/lib/status/job-gate";
 import { canFreeEditSample, SAMPLE_ARCHIVE_STATUSES, submitTarget } from "@/lib/status/sample-gate";
 
 function fail(message: string): ActionResult {
@@ -180,10 +189,9 @@ export function LiveLimsProvider({
             id,
             number: jobNo,
             customer_id: input.customerId,
-            site_id: input.siteId,
+            site_id: input.siteId || null,
             due_date: input.dueDate || null,
-            scope_notes: input.scope,
-            status: "draft",
+            scope_notes: input.scope || null,
           },
         ]);
         await refresh();
@@ -202,6 +210,63 @@ export function LiveLimsProvider({
         return res;
       }),
     [refresh, withClient],
+  );
+
+  const updateJobFields: LimsContextValue["updateJobFields"] = useCallback(
+    (id, fields, actor) =>
+      withClient(async (client) => {
+        const job = data.jobs.find((j) => j.id === id);
+        if (!job) return fail("Job tidak ditemukan.");
+        if (!canFreeEditJob(job.status, actor.role) && !canEditJobDueOrScope(job.status, actor.role)) {
+          return fail("Field job terkunci untuk peran atau status ini.");
+        }
+        const dueDate = fields.dueDate ?? job.dueDate;
+        if (dueDate && !isValidDueDate(dueDate)) {
+          return fail("Due date tidak valid (gunakan tanggal kalender Asia/Jakarta).");
+        }
+        const payload: Record<string, unknown> = {};
+        if (fields.dueDate !== undefined && canEditJobDueOrScope(job.status, actor.role)) {
+          payload.due_date = fields.dueDate || null;
+        }
+        if (fields.scope !== undefined && canEditJobDueOrScope(job.status, actor.role)) {
+          payload.scope_notes = fields.scope;
+        }
+        if (fields.siteId !== undefined && canEditJobSite(job.status, actor.role)) {
+          payload.site_id = fields.siteId || null;
+        }
+        if (fields.customerId !== undefined && canChangeJobCustomer(job.status, actor.role)) {
+          payload.customer_id = fields.customerId;
+        }
+        if (Object.keys(payload).length === 0) {
+          return fail("Tidak ada field yang boleh diubah pada status ini.");
+        }
+        await updateRow(client, "jobs", id, [payload]);
+        await refresh();
+        return { ok: true };
+      }),
+    [data.jobs, refresh, withClient],
+  );
+
+  const transitionJobStatus: LimsContextValue["transitionJobStatus"] = useCallback(
+    (id, toStatus, actor, extra) =>
+      withClient(async (client) => {
+        const job = data.jobs.find((j) => j.id === id);
+        if (!job) return fail("Job tidak ditemukan.");
+        const legal = jobActionsFor(job, actor).some(
+          (action) => action.toStatus === toStatus && action.allowed,
+        );
+        if (!legal) return fail("Transisi status tidak diizinkan untuk peran ini.");
+        if (toStatus === "cancelled" && isSamplingOrLater(job.status) && !extra?.reason?.trim()) {
+          return fail("Alasan pembatalan wajib setelah sampling.");
+        }
+        const res = await transitionJob(client, id, toStatus, {
+          reason: extra?.reason ?? null,
+          override: extra?.override ?? false,
+        });
+        await refresh();
+        return res;
+      }),
+    [data.jobs, refresh, withClient],
   );
 
   const createSampling: LimsContextValue["createSampling"] = useCallback(
@@ -554,6 +619,8 @@ export function LiveLimsProvider({
       upsertSite,
       createJob,
       scheduleJob,
+      updateJobFields,
+      transitionJobStatus,
       createSampling,
       markSamplingDone,
       createSample,
@@ -582,6 +649,8 @@ export function LiveLimsProvider({
       upsertSite,
       createJob,
       scheduleJob,
+      updateJobFields,
+      transitionJobStatus,
       createSampling,
       markSamplingDone,
       createSample,

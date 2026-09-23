@@ -5,6 +5,7 @@ import type {
   CustomerSite,
   Invoice,
   Job,
+  JobFreeFields,
   LimsData,
   Matrix,
   Method,
@@ -28,6 +29,13 @@ export type LimsContextValue = {
   upsertSite: (input: Omit<CustomerSite, "id"> & { id?: string }) => string;
   createJob: (input: Omit<Job, "id" | "jobNo" | "status" | "createdAt">) => string;
   scheduleJob: (jobId: string) => ActionResult | Promise<ActionResult>;
+  updateJobFields: (id: string, fields: JobFreeFields, actor: SessionUser) => ActionResult | Promise<ActionResult>;
+  transitionJobStatus: (
+    id: string,
+    toStatus: string,
+    actor: SessionUser,
+    extra?: { reason?: string | null; override?: boolean },
+  ) => ActionResult | Promise<ActionResult>;
   createSampling: (input: Omit<SamplingEvent, "id" | "status">) => string;
   markSamplingDone: (id: string) => void;
   createSample: (input: { jobId: string; matrixId: string }) => string;

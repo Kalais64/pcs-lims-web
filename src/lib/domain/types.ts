@@ -96,6 +96,13 @@ export type Sample = {
   createdAt: string;
 };
 
+export type JobFreeFields = {
+  customerId?: string;
+  siteId?: string;
+  dueDate?: string;
+  scope?: string;
+};
+
 export type SampleFreeFields = {
   matrixId: string;
   sampleCode: string;

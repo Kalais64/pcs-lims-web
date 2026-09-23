@@ -42,6 +42,7 @@ export function useDashboardStats() {
         const customer = data.customers.find((c) => c.id === job.customerId);
         const matrix = data.matrices.find((m) => m.id === job.matrixId);
         return {
+          id: job.id,
           jobNo: job.jobNo,
           customer: customer?.companyName ?? "—",
           sampleType: matrix?.name ?? "—",

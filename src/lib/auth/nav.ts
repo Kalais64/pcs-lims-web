@@ -40,7 +40,7 @@ export const NAV_ITEMS: readonly NavItem[] = [
     href: "/jobs",
     label: "Job Order",
     icon: "▣",
-    roles: ["admin", "sales", "finance"],
+    roles: ALL_ROLES,
   },
   {
     href: "/sampling",

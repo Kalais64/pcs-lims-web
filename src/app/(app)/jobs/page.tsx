@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import Link from "next/link";
 import { PageHeader } from "@/components/lims/page-header";
 import { Panel } from "@/components/lims/panel";
 import { StatusBadge } from "@/components/status/status-badge";
@@ -25,19 +26,20 @@ import {
 } from "@/components/ui/table";
 import { useAuth } from "@/lib/hooks/use-auth";
 import { JOB_STATUSES, JOB_STATUS_LABELS } from "@/lib/status/job";
-import { firstActiveId, optionsForForm } from "@/lib/domain/masters";
+import { isValidDueDate } from "@/lib/status/job-gate";
+import { formatDateId } from "@/lib/datetime";
 import { useLims } from "@/lib/store/lims-provider";
 
 export default function JobsPage() {
   const { user } = useAuth();
-  const { data, createJob, scheduleJob } = useLims();
+  const { data, createJob, isLoading, loadError } = useLims();
   const canWrite = user?.role === "admin" || user?.role === "sales";
   const [status, setStatus] = useState<string>("all");
   const [customerId, setCustomerId] = useState("all");
+  const [message, setMessage] = useState<string | null>(null);
   const [form, setForm] = useState({
     customerId: data.customers[0]?.id ?? "",
-    siteId: data.sites[0]?.id ?? "",
-    matrixId: firstActiveId(data.matrices),
+    siteId: data.sites.find((s) => s.customerId === data.customers[0]?.id)?.id ?? "",
     dueDate: "",
     scope: "",
   });
@@ -58,7 +60,7 @@ export default function JobsPage() {
     <div className="space-y-5">
       <PageHeader
         title="Job Order"
-        description="Registrasi pekerjaan laboratorium. Nomor: PCS-YYMMDD-NNN."
+        description="Registrasi pekerjaan laboratorium. Nomor: PCS-YYMMDD-NNN. Status hanya lewat transisi legal."
       />
       <div className="flex flex-wrap gap-2">
         <Select value={status} onValueChange={setStatus}>
@@ -96,40 +98,39 @@ export default function JobsPage() {
               <TableHead>Job No.</TableHead>
               <TableHead>Customer</TableHead>
               <TableHead>Site</TableHead>
-              <TableHead>Matriks</TableHead>
               <TableHead>Due Date</TableHead>
               <TableHead>Status</TableHead>
-              <TableHead />
+              <TableHead>Detail</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {jobs.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={7} className="text-[#5d7266]">
-                  Tidak ada job.
+                <TableCell colSpan={6} className="text-[#5d7266]">
+                  {isLoading
+                    ? "Memuat job…"
+                    : loadError
+                      ? `Gagal memuat daftar: ${loadError}`
+                      : "Tidak ada job."}
                 </TableCell>
               </TableRow>
             ) : (
               jobs.map((job) => {
                 const customer = data.customers.find((c) => c.id === job.customerId);
                 const site = data.sites.find((s) => s.id === job.siteId);
-                const matrix = data.matrices.find((m) => m.id === job.matrixId);
                 return (
                   <TableRow key={job.id}>
                     <TableCell className="font-medium">{job.jobNo}</TableCell>
-                    <TableCell>{customer?.companyName}</TableCell>
-                    <TableCell>{site?.name}</TableCell>
-                    <TableCell>{matrix?.name}</TableCell>
-                    <TableCell>{job.dueDate}</TableCell>
+                    <TableCell>{customer?.companyName ?? "—"}</TableCell>
+                    <TableCell>{site?.name ?? "—"}</TableCell>
+                    <TableCell>{formatDateId(job.dueDate)}</TableCell>
                     <TableCell>
                       <StatusBadge entity="job" status={job.status} />
                     </TableCell>
                     <TableCell>
-                      {canWrite && job.status === "draft" ? (
-                        <Button size="sm" variant="outline" onClick={() => void scheduleJob(job.id)}>
-                          Jadwalkan
-                        </Button>
-                      ) : null}
+                      <Link href={`/jobs/${job.id}`} className="text-sm text-[#16A34A] underline">
+                        Buka
+                      </Link>
                     </TableCell>
                   </TableRow>
                 );
@@ -140,24 +141,43 @@ export default function JobsPage() {
       </Panel>
 
       {canWrite ? (
-        <Panel title="Buat job order">
+        <Panel title="Buat job order (draf)">
+          <p className="mb-3 text-sm text-[#5d7266]">
+            Customer hanya dari data yang sudah ada. Tidak ada pembuatan customer di layar ini.
+          </p>
           <form
             className="grid gap-3 md:grid-cols-2"
             onSubmit={(e) => {
               e.preventDefault();
-              createJob(form);
+              const existing = data.customers.find((c) => c.id === form.customerId);
+              if (!existing) {
+                setMessage("Pilih customer yang sudah terdaftar.");
+                return;
+              }
+              if (form.dueDate && !isValidDueDate(form.dueDate)) {
+                setMessage("Due date tidak valid.");
+                return;
+              }
+              createJob({
+                customerId: existing.id,
+                siteId: form.siteId,
+                matrixId: "",
+                dueDate: form.dueDate,
+                scope: form.scope,
+              });
+              setMessage("Job draf dibuat.");
             }}
           >
-            <Field label="Customer">
+            <Field label="Customer (existing)">
               <Select
-                value={form.customerId}
+                value={form.customerId || undefined}
                 onValueChange={(id) => {
                   const firstSite = data.sites.find((s) => s.customerId === id);
                   setForm({ ...form, customerId: id, siteId: firstSite?.id ?? "" });
                 }}
               >
                 <SelectTrigger className="w-full">
-                  <SelectValue />
+                  <SelectValue placeholder="Pilih customer" />
                 </SelectTrigger>
                 <SelectContent>
                   {data.customers.map((c) => (
@@ -169,9 +189,12 @@ export default function JobsPage() {
               </Select>
             </Field>
             <Field label="Site">
-              <Select value={form.siteId} onValueChange={(id) => setForm({ ...form, siteId: id })}>
+              <Select
+                value={form.siteId || undefined}
+                onValueChange={(id) => setForm({ ...form, siteId: id })}
+              >
                 <SelectTrigger className="w-full">
-                  <SelectValue />
+                  <SelectValue placeholder="Pilih site" />
                 </SelectTrigger>
                 <SelectContent>
                   {sites.map((s) => (
@@ -182,27 +205,9 @@ export default function JobsPage() {
                 </SelectContent>
               </Select>
             </Field>
-            <Field label="Matriks">
-              <Select
-                value={form.matrixId}
-                onValueChange={(id) => setForm({ ...form, matrixId: id })}
-              >
-                <SelectTrigger className="w-full">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {optionsForForm(data.matrices, [form.matrixId]).map((m) => (
-                    <SelectItem key={m.id} value={m.id}>
-                      {m.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </Field>
             <Field label="Due date">
               <Input
                 type="date"
-                required
                 value={form.dueDate}
                 onChange={(e) => setForm({ ...form, dueDate: e.target.value })}
               />
@@ -215,10 +220,15 @@ export default function JobsPage() {
                 />
               </Field>
             </div>
-            <Button type="submit" className="bg-[#16A34A] hover:bg-[#14532D]">
+            <Button
+              type="submit"
+              className="bg-[#16A34A] hover:bg-[#14532D]"
+              disabled={data.customers.length === 0}
+            >
               Buat Job
             </Button>
           </form>
+          {message ? <p className="mt-3 text-sm text-[#14532D]">{message}</p> : null}
         </Panel>
       ) : null}
     </div>

@@ -125,7 +125,7 @@ export function mapJobs(data: unknown): Job[] {
     siteId: pickString(row, ["site_id", "customer_site_id"]),
     matrixId: pickString(row, ["matrix_id"]),
     dueDate: dateOnly(pickString(row, ["due_date", "due_at"])),
-    scope: pickString(row, ["scope", "notes", "description"]),
+    scope: pickString(row, ["scope_notes", "scope", "notes", "description"]),
     status: normalizeJobStatus(pickString(row, ["status"])),
     createdAt: pickString(row, ["created_at"], new Date().toISOString()),
   }));

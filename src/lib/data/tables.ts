@@ -6,11 +6,13 @@ import {
   METHOD_SELECT,
   PARAMETER_SELECT,
 } from "@/lib/data/master-schema";
+import { JOB_SELECT } from "@/lib/data/jobs-schema";
 import { SAMPLE_SELECT } from "@/lib/data/samples-schema";
 
 export { SAMPLE_SELECT } from "@/lib/data/samples-schema";
 
 const SELECT_BY_KEY: Partial<Record<keyof typeof TABLE_CANDIDATES, string>> = {
+  jobs: JOB_SELECT,
   samples: SAMPLE_SELECT,
   matrices: MATRIX_SELECT,
   methods: METHOD_SELECT,
