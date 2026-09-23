@@ -2,57 +2,22 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 
 export type RpcResult = { ok: true; data?: unknown } | { ok: false; message: string };
 
-function isMissingFn(message: string) {
-  return /could not find the function|PGRST202|schema cache/i.test(message);
-}
+type TransitionArgs = {
+  p_id: string;
+  p_to: string;
+  p_reason: string | null;
+  p_override?: boolean;
+  p_lhu_number?: string | null;
+};
 
-export async function callRpc(
+async function callTransition(
   client: SupabaseClient,
-  fn: string,
-  variants: Record<string, unknown>[],
+  fn: "transition_job" | "transition_sample" | "transition_lhu" | "transition_invoice",
+  args: TransitionArgs,
 ): Promise<RpcResult> {
-  let last = "RPC gagal.";
-  for (const args of variants) {
-    const { data, error } = await client.rpc(fn, args);
-    if (!error) return { ok: true, data };
-    last = error.message || last;
-    if (!isMissingFn(last)) return { ok: false, message: last };
-  }
-  return { ok: false, message: last };
-}
-
-export function transitionVariants(
-  id: string,
-  toStatus: string,
-  extra?: { reason?: string | null; override?: boolean; lhuNumber?: string },
-) {
-  const reason = extra?.reason ?? null;
-  const override = extra?.override ?? false;
-  const withLhu = extra?.lhuNumber
-    ? [
-        {
-          p_id: id,
-          p_to_status: toStatus,
-          p_reason: reason,
-          p_lhu_number: extra.lhuNumber,
-        },
-        {
-          id,
-          to_status: toStatus,
-          reason,
-          lhu_number: extra.lhuNumber,
-        },
-      ]
-    : [];
-  return [
-    ...withLhu,
-    { p_id: id, p_to_status: toStatus, p_reason: reason, p_override: override },
-    { id, to_status: toStatus, reason, override },
-    { p_job_id: id, p_to_status: toStatus, p_reason: reason, p_override: override },
-    { p_sample_id: id, p_to_status: toStatus, p_reason: reason, p_override: override },
-    { p_invoice_id: id, p_to_status: toStatus, p_reason: reason },
-    { p_lhu_id: id, p_to_status: toStatus, p_reason: reason, p_lhu_number: extra?.lhuNumber ?? null },
-  ];
+  const { data, error } = await client.rpc(fn, args);
+  if (error) return { ok: false, message: error.message || "RPC gagal." };
+  return { ok: true, data };
 }
 
 export async function transitionJob(
@@ -61,7 +26,12 @@ export async function transitionJob(
   toStatus: string,
   extra?: { reason?: string | null; override?: boolean },
 ) {
-  return callRpc(client, "transition_job", transitionVariants(id, toStatus, extra));
+  return callTransition(client, "transition_job", {
+    p_id: id,
+    p_to: toStatus,
+    p_reason: extra?.reason ?? null,
+    p_override: extra?.override ?? false,
+  });
 }
 
 export async function transitionSample(
@@ -70,7 +40,12 @@ export async function transitionSample(
   toStatus: string,
   extra?: { reason?: string | null; override?: boolean },
 ) {
-  return callRpc(client, "transition_sample", transitionVariants(id, toStatus, extra));
+  return callTransition(client, "transition_sample", {
+    p_id: id,
+    p_to: toStatus,
+    p_reason: extra?.reason ?? null,
+    p_override: extra?.override ?? false,
+  });
 }
 
 export async function transitionLhu(
@@ -79,7 +54,12 @@ export async function transitionLhu(
   toStatus: string,
   extra?: { reason?: string | null; lhuNumber?: string },
 ) {
-  return callRpc(client, "transition_lhu", transitionVariants(id, toStatus, extra));
+  return callTransition(client, "transition_lhu", {
+    p_id: id,
+    p_to: toStatus,
+    p_reason: extra?.reason ?? null,
+    p_lhu_number: extra?.lhuNumber ?? null,
+  });
 }
 
 export async function transitionInvoice(
@@ -88,5 +68,9 @@ export async function transitionInvoice(
   toStatus: string,
   extra?: { reason?: string | null },
 ) {
-  return callRpc(client, "transition_invoice", transitionVariants(id, toStatus, extra));
+  return callTransition(client, "transition_invoice", {
+    p_id: id,
+    p_to: toStatus,
+    p_reason: extra?.reason ?? null,
+  });
 }

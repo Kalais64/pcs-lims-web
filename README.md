@@ -52,7 +52,16 @@ Dual control: **dua akun berbeda** (verifier ≠ approver). Admin override lewat
 
 **Invoice:** `unpaid` · `paid` · `void`
 
-Status berubah lewat `transition_job` / `transition_sample` / `transition_lhu` / `transition_invoice` (bukan UPDATE status mentah).
+Status berubah lewat RPC bernama (bukan UPDATE status mentah):
+
+```ts
+supabase.rpc("transition_job", { p_id, p_to, p_reason, p_override })
+supabase.rpc("transition_sample", { p_id, p_to, p_reason, p_override })
+supabase.rpc("transition_lhu", { p_id, p_to, p_reason, p_lhu_number })
+supabase.rpc("transition_invoice", { p_id, p_to, p_reason })
+```
+
+`p_override: true` hanya untuk admin override (teraudit). Dual control: verify ≠ approve harus dua `auth.uid()` berbeda.
 
 ## Menjalankan secara lokal
 
