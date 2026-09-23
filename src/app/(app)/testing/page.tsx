@@ -50,7 +50,7 @@ export default function TestingPage() {
     return data.parameters.slice(0, 4).map((p, i) => ({
       parameterId: p.id,
       methodId: data.methods[i]?.id ?? data.methods[0]?.id ?? "",
-      unitId: p.id === "p-ph" ? "u-ph" : "u-mgl",
+      unitId: p.unit || data.units[0]?.id || "",
       result: "",
     }));
   }, [sampleId, data.parameters, data.methods, existing.length]);
@@ -73,7 +73,7 @@ export default function TestingPage() {
         data.parameters.slice(0, 4).map((p, i) => ({
           parameterId: p.id,
           methodId: data.methods[i]?.id ?? data.methods[0]?.id ?? "",
-          unitId: p.id === "p-ph" ? "u-ph" : "u-mgl",
+          unitId: p.unit || data.units[0]?.id || "",
           result: "",
         })),
       );

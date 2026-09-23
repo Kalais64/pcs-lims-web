@@ -2,6 +2,10 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 
 const cache = new Map<string, string>();
 
+function isMissingTable(message: string) {
+  return /does not exist|PGRST205|schema cache|not find/i.test(message);
+}
+
 export async function resolveTable(client: SupabaseClient, key: string, names: string[]) {
   const hit = cache.get(key);
   if (hit) return hit;
@@ -13,10 +17,9 @@ export async function resolveTable(client: SupabaseClient, key: string, names: s
       return name;
     }
     last = error.message;
-    if (!/does not exist|PGRST205|schema cache|not find/i.test(error.message)) {
-      cache.set(key, name);
-      return name;
-    }
+    if (isMissingTable(error.message)) continue;
+    cache.set(key, name);
+    return name;
   }
   throw new Error(last || `Tabel ${key} tidak ditemukan.`);
 }
@@ -28,10 +31,9 @@ export const TABLE_CANDIDATES = {
   matrices: ["matrices", "sample_matrices"],
   parameters: ["parameters", "test_parameters"],
   methods: ["methods", "test_methods"],
-  units: ["units"],
   jobs: ["jobs"],
   samplingEvents: ["sampling_events", "samplings"],
-  samples: ["samples"],
+  samples: ["samples", "lab_samples", "sample_records"],
   results: ["test_results", "results", "sample_results"],
   lhu: ["lhu_documents", "lhu_records"],
   invoices: ["invoices"],

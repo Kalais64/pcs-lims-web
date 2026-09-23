@@ -119,7 +119,15 @@ export default function SamplesPage() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {rows.map((s) => {
+            {rows.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={7} className="text-[#5d7266]">
+                  Tidak ada sampel. Jika seed Backend ada (mis. PCS-S-260923-001), periksa RLS SELECT
+                  pada tabel samples.
+                </TableCell>
+              </TableRow>
+            ) : (
+            rows.map((s) => {
               const job = data.jobs.find((j) => j.id === s.jobId);
               const matrix = data.matrices.find((m) => m.id === s.matrixId);
               const rec = receive[s.id] ?? {
@@ -173,7 +181,8 @@ export default function SamplesPage() {
                   </TableCell>
                 </TableRow>
               );
-            })}
+            })
+            )}
           </TableBody>
         </Table>
         {error ? <p className="mt-2 text-sm text-red-600">{error}</p> : null}

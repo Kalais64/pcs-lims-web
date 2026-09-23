@@ -258,6 +258,7 @@ export function LiveLimsProvider({
               parameter_id: row.parameterId,
               method_id: row.methodId,
               unit_id: row.unitId,
+              unit: row.unitId,
               result: row.result,
               value: row.result,
               analyst_id: analystId,
@@ -287,8 +288,16 @@ export function LiveLimsProvider({
   );
 
   const verifySample: LimsContextValue["verifySample"] = useCallback(
-    (sampleId) =>
+    (sampleId, actor) =>
       withClient(async (client) => {
+        if (actor.role !== "verifier" && actor.role !== "admin") {
+          return fail("Hanya Verifier atau Admin yang boleh memverifikasi.");
+        }
+        await updateRow(client, "samples", sampleId, [
+          { verified_by: actor.id },
+          { verified_by_id: actor.id },
+          { verifier_id: actor.id },
+        ]);
         const res = await transitionSample(client, sampleId, "pending_approve");
         const sample = data.samples.find((s) => s.id === sampleId);
         if (sample) await syncJob(client, data, sample.jobId);
@@ -301,10 +310,24 @@ export function LiveLimsProvider({
   const approveSample: LimsContextValue["approveSample"] = useCallback(
     (sampleId, actor, override = false) =>
       withClient(async (client) => {
+        if (actor.role !== "approver" && actor.role !== "admin") {
+          return fail("Hanya Approver atau Admin yang boleh approve.");
+        }
         const sample = data.samples.find((s) => s.id === sampleId);
+        const adminOverride = Boolean(override && actor.role === "admin");
+        if (sample?.verifiedById && sample.verifiedById === actor.id && !adminOverride) {
+          return fail(
+            "Dual control: Verify dan Approve harus dua pengguna berbeda. Admin dapat override.",
+          );
+        }
+        await updateRow(client, "samples", sampleId, [
+          { approved_by: actor.id },
+          { approved_by_id: actor.id },
+          { approver_id: actor.id },
+        ]);
         const res = await transitionSample(client, sampleId, "approved", {
-          override: Boolean(override && actor.role === "admin"),
-          reason: override && actor.role === "admin" ? "Admin override dual control" : null,
+          override: adminOverride,
+          reason: adminOverride ? "Admin override dual control" : null,
         });
         if (sample) await syncJob(client, data, sample.jobId);
         await refresh();
@@ -385,14 +408,9 @@ export function LiveLimsProvider({
 
   const upsertMaster: LimsContextValue["upsertMaster"] = useCallback(
     (kind, item) => {
+      if (kind === "units") return;
       const key =
-        kind === "matrices"
-          ? "matrices"
-          : kind === "parameters"
-            ? "parameters"
-            : kind === "methods"
-              ? "methods"
-              : "units";
+        kind === "matrices" ? "matrices" : kind === "parameters" ? "parameters" : "methods";
       void withClient(async (client) => {
         await insertRow(client, key, [{ name: item.name }]);
         await refresh();

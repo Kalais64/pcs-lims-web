@@ -8,6 +8,15 @@ import { refreshSupabaseSession } from "@/lib/supabase/middleware";
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
+  const aliases: Record<string, string> = {
+    "/customer": "/customers",
+    "/invoice": "/invoices",
+  };
+  if (aliases[pathname]) {
+    const url = request.nextUrl.clone();
+    url.pathname = aliases[pathname];
+    return NextResponse.redirect(url);
+  }
   const mode = getRuntimeMode();
   const isLogin = pathname === "/login";
 

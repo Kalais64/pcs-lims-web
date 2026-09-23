@@ -16,10 +16,10 @@ import {
 import { useLims } from "@/lib/store/lims-provider";
 
 const TABS = [
-  { key: "matrices", label: "Matriks" },
-  { key: "parameters", label: "Parameter" },
-  { key: "methods", label: "Metode" },
-  { key: "units", label: "Satuan" },
+  { key: "matrices", label: "Matriks", writable: true },
+  { key: "parameters", label: "Parameter", writable: true },
+  { key: "methods", label: "Metode", writable: true },
+  { key: "units", label: "Satuan", writable: false },
 ] as const;
 
 export default function MasterPage() {
@@ -55,24 +55,31 @@ export default function MasterPage() {
         ))}
       </div>
       <Panel title={TABS.find((t) => t.key === tab)?.label}>
-        <form
-          className="mb-4 flex gap-2"
-          onSubmit={(e) => {
-            e.preventDefault();
-            if (!name.trim()) return;
-            upsertMaster(tab, { name: name.trim() });
-            setName("");
-          }}
-        >
-          <Input
-            placeholder={`Nama ${TABS.find((t) => t.key === tab)?.label.toLowerCase()}`}
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-          />
-          <Button type="submit" className="bg-[#16A34A] hover:bg-[#14532D]">
-            Tambah
-          </Button>
-        </form>
+        {tab === "units" ? (
+          <p className="mb-4 text-sm text-[#5d7266]">
+            Satuan tidak punya tabel master di Backend. Daftar ini diambil dari kolom satuan
+            pada parameter.
+          </p>
+        ) : (
+          <form
+            className="mb-4 flex gap-2"
+            onSubmit={(e) => {
+              e.preventDefault();
+              if (!name.trim()) return;
+              upsertMaster(tab, { name: name.trim() });
+              setName("");
+            }}
+          >
+            <Input
+              placeholder={`Nama ${TABS.find((t) => t.key === tab)?.label.toLowerCase()}`}
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+            />
+            <Button type="submit" className="bg-[#16A34A] hover:bg-[#14532D]">
+              Tambah
+            </Button>
+          </form>
+        )}
         <Table>
           <TableHeader>
             <TableRow>

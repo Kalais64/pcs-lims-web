@@ -15,10 +15,10 @@ import type {
   TestResult,
   Unit,
 } from "@/lib/domain/types";
-import type { InvoiceStatus } from "@/lib/status/invoice";
-import type { JobStatus } from "@/lib/status/job";
-import type { LhuStatus } from "@/lib/status/lhu";
-import type { SampleStatus } from "@/lib/status/sample";
+import { normalizeInvoiceStatus } from "@/lib/status/invoice";
+import { normalizeJobStatus } from "@/lib/status/job";
+import { normalizeLhuStatus } from "@/lib/status/lhu";
+import { normalizeSampleStatus } from "@/lib/status/sample";
 import type { SamplingStatus } from "@/lib/status/sampling";
 import { asRows, dateOnly, pickNullable, pickNumber, pickString } from "@/lib/data/pick";
 
@@ -62,7 +62,27 @@ export function mapNamed(data: unknown): Array<{ id: string; name: string }> {
   return asRows(data).map((row) => ({
     id: pickString(row, ["id"]),
     name: pickString(row, ["name", "code", "label"]),
-  }));
+  })).filter((row) => row.id);
+}
+
+export function mapParameters(data: unknown): Parameter[] {
+  return asRows(data)
+    .map((row) => ({
+      id: pickString(row, ["id"]),
+      name: pickString(row, ["name", "code", "label", "parameter_name"]),
+      unit: pickString(row, ["unit", "unit_name", "satuan", "default_unit", "uom"]) || undefined,
+    }))
+    .filter((row) => row.id);
+}
+
+export function unitsFromParameters(parameters: Parameter[]): Unit[] {
+  const seen = new Map<string, Unit>();
+  for (const parameter of parameters) {
+    const name = parameter.unit?.trim();
+    if (!name) continue;
+    if (!seen.has(name)) seen.set(name, { id: name, name });
+  }
+  return [...seen.values()];
 }
 
 export function mapJobs(data: unknown): Job[] {
@@ -74,7 +94,7 @@ export function mapJobs(data: unknown): Job[] {
     matrixId: pickString(row, ["matrix_id"]),
     dueDate: dateOnly(pickString(row, ["due_date", "due_at"])),
     scope: pickString(row, ["scope", "notes", "description"]),
-    status: pickString(row, ["status"]) as JobStatus,
+    status: normalizeJobStatus(pickString(row, ["status"])),
     createdAt: pickString(row, ["created_at"], new Date().toISOString()),
   }));
 }
@@ -91,19 +111,31 @@ export function mapSampling(data: unknown): SamplingEvent[] {
 }
 
 export function mapSamples(data: unknown): Sample[] {
-  return asRows(data).map((row) => ({
-    id: pickString(row, ["id"]),
-    sampleNo: pickString(row, ["sample_no", "sample_number", "code"]),
-    jobId: pickString(row, ["job_id"]),
-    matrixId: pickString(row, ["matrix_id"]),
-    status: pickString(row, ["status"]) as SampleStatus,
-    receivedAt: pickNullable(row, ["received_at"]),
-    conditionNotes: pickString(row, ["condition_notes", "receive_notes", "notes"]),
-    verifiedById: pickNullable(row, ["verified_by", "verified_by_id", "verifier_id"]),
-    approvedById: pickNullable(row, ["approved_by", "approved_by_id", "approver_id"]),
-    rejectReason: pickNullable(row, ["reject_reason", "rejection_reason"]),
-    createdAt: pickString(row, ["created_at"], new Date().toISOString()),
-  }));
+  return asRows(data)
+    .map((row) => {
+      const sampleNo = pickString(row, [
+        "sample_no",
+        "sample_number",
+        "sample_code",
+        "code",
+        "number",
+      ]);
+      const id = pickString(row, ["id", "sample_id"], sampleNo);
+      return {
+        id,
+        sampleNo: sampleNo || id,
+        jobId: pickString(row, ["job_id", "job_order_id"]),
+        matrixId: pickString(row, ["matrix_id", "sample_matrix_id"]),
+        status: normalizeSampleStatus(pickString(row, ["status"])),
+        receivedAt: pickNullable(row, ["received_at"]),
+        conditionNotes: pickString(row, ["condition_notes", "receive_notes", "notes"]),
+        verifiedById: pickNullable(row, ["verified_by", "verified_by_id", "verifier_id"]),
+        approvedById: pickNullable(row, ["approved_by", "approved_by_id", "approver_id"]),
+        rejectReason: pickNullable(row, ["reject_reason", "rejection_reason"]),
+        createdAt: pickString(row, ["created_at"], new Date().toISOString()),
+      };
+    })
+    .filter((row) => row.id);
 }
 
 export function mapResults(data: unknown): TestResult[] {
@@ -112,7 +144,7 @@ export function mapResults(data: unknown): TestResult[] {
     sampleId: pickString(row, ["sample_id"]),
     parameterId: pickString(row, ["parameter_id"]),
     methodId: pickString(row, ["method_id"]),
-    unitId: pickString(row, ["unit_id"]),
+    unitId: pickString(row, ["unit_id", "unit", "satuan"]),
     result: pickString(row, ["result", "value", "result_value", "result_text"]),
     analystId: pickString(row, ["analyst_id", "tested_by"]),
     testedAt: pickString(row, ["tested_at", "created_at"], new Date().toISOString()),
@@ -127,7 +159,7 @@ export function mapLhu(data: unknown): LhuRecord[] {
     revision: pickNumber(row, ["revision", "rev"], 0),
     issuerId: pickString(row, ["issuer_id", "issued_by", "approved_by"]),
     issuedAt: pickNullable(row, ["issued_at"]),
-    status: pickString(row, ["status"]) as LhuStatus,
+    status: normalizeLhuStatus(pickString(row, ["status"])),
   }));
 }
 
@@ -137,7 +169,7 @@ export function mapInvoices(data: unknown): Invoice[] {
     invoiceNo: pickString(row, ["invoice_no", "invoice_number", "number"]),
     jobId: pickString(row, ["job_id"]),
     amount: pickNumber(row, ["amount", "total", "grand_total"]),
-    status: pickString(row, ["status"]) as InvoiceStatus,
+    status: normalizeInvoiceStatus(pickString(row, ["status"])),
     createdAt: pickString(row, ["created_at"], new Date().toISOString()),
   }));
 }
@@ -160,7 +192,7 @@ export function asMatrices(data: unknown): Matrix[] {
   return mapNamed(data);
 }
 export function asParameters(data: unknown): Parameter[] {
-  return mapNamed(data);
+  return mapParameters(data);
 }
 export function asMethods(data: unknown): Method[] {
   return mapNamed(data);

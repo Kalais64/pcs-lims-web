@@ -29,7 +29,7 @@ export type CustomerSite = {
 };
 
 export type Matrix = { id: string; name: string };
-export type Parameter = { id: string; name: string };
+export type Parameter = { id: string; name: string; unit?: string };
 export type Method = { id: string; name: string };
 export type Unit = { id: string; name: string };
 
