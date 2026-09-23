@@ -6,11 +6,16 @@ import {
   METHOD_SELECT,
   PARAMETER_SELECT,
 } from "@/lib/data/master-schema";
+import { JOB_SELECT } from "@/lib/data/jobs-schema";
 import { SAMPLE_SELECT } from "@/lib/data/samples-schema";
+import { SITE_SELECT } from "@/lib/data/sites-schema";
+import { omitEmptyUuidFields } from "@/lib/data/uuid";
 
 export { SAMPLE_SELECT } from "@/lib/data/samples-schema";
 
 const SELECT_BY_KEY: Partial<Record<keyof typeof TABLE_CANDIDATES, string>> = {
+  jobs: JOB_SELECT,
+  sites: SITE_SELECT,
   samples: SAMPLE_SELECT,
   matrices: MATRIX_SELECT,
   methods: METHOD_SELECT,
@@ -72,7 +77,7 @@ export async function insertRow(
   const table = resolveTable(key);
   let last = "Insert gagal.";
   for (const raw of payloads) {
-    let payload = stripForbiddenColumns(raw);
+    let payload = omitEmptyUuidFields(stripForbiddenColumns(raw));
     for (let attempt = 0; attempt < 8; attempt += 1) {
       const { data, error } = await client.from(table).insert(payload).select("id").limit(1);
       if (!error) return { table, row: data?.[0] as Record<string, unknown> | undefined };
@@ -98,7 +103,7 @@ export async function updateRow(
   const table = resolveTable(key);
   let last = "Update gagal.";
   for (const raw of payloads) {
-    let payload = stripForbiddenColumns(raw);
+    let payload = omitEmptyUuidFields(stripForbiddenColumns(raw));
     for (let attempt = 0; attempt < 8; attempt += 1) {
       const { error } = await client.from(table).update(payload).eq("id", id);
       if (!error) return;

@@ -93,7 +93,7 @@ export default function DashboardPage() {
                 {recentJobs.map((job) => (
                   <TableRow key={job.jobNo}>
                     <TableCell className="font-medium">
-                      <Link href="/jobs" className="text-[#14532D] hover:underline">
+                      <Link href={`/jobs/${job.id}`} className="text-[#14532D] hover:underline">
                         {job.jobNo}
                       </Link>
                     </TableCell>

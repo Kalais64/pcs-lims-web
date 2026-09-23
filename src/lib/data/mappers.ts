@@ -51,12 +51,14 @@ export function mapCustomers(data: unknown): Customer[] {
 }
 
 export function mapSites(data: unknown): CustomerSite[] {
-  return asRows(data).map((row) => ({
-    id: pickString(row, ["id"]),
-    customerId: pickString(row, ["customer_id"]),
-    name: pickString(row, ["name", "site_name"]),
-    address: pickString(row, ["address", "site_address"]),
-  }));
+  return asRows(data)
+    .map((row) => ({
+      id: pickString(row, ["id"]),
+      customerId: pickString(row, ["customer_id"]),
+      name: pickString(row, ["name", "site_name"]),
+      address: pickString(row, ["address", "site_address"]),
+    }))
+    .filter((row) => row.id && row.customerId);
 }
 
 export function mapNamed(data: unknown): Array<{ id: string; name: string }> {
@@ -125,7 +127,7 @@ export function mapJobs(data: unknown): Job[] {
     siteId: pickString(row, ["site_id", "customer_site_id"]),
     matrixId: pickString(row, ["matrix_id"]),
     dueDate: dateOnly(pickString(row, ["due_date", "due_at"])),
-    scope: pickString(row, ["scope", "notes", "description"]),
+    scope: pickString(row, ["scope_notes", "scope", "notes", "description"]),
     status: normalizeJobStatus(pickString(row, ["status"])),
     createdAt: pickString(row, ["created_at"], new Date().toISOString()),
   }));

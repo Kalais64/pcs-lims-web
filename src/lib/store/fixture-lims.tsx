@@ -13,12 +13,22 @@ import type {
   Matrix,
   Method,
   Parameter,
+  JobFreeFields,
   SampleFreeFields,
   SamplingEvent,
   TestResult,
 } from "@/lib/domain/types";
 import type { SessionUser } from "@/lib/auth/types";
 import { SEED_DATA } from "@/lib/fixtures/seed";
+import {
+  canChangeJobCustomer,
+  canEditJobDueOrScope,
+  canEditJobSite,
+  canFreeEditJob,
+  isSamplingOrLater,
+  isValidDueDate,
+  jobActionsFor,
+} from "@/lib/status/job-gate";
 import { canFreeEditSample, SAMPLE_ARCHIVE_STATUSES } from "@/lib/status/sample-gate";
 import { withSyncedJob } from "@/lib/store/sync-job";
 import {
@@ -138,6 +148,71 @@ export function FixtureLimsProvider({ children }: { children: React.ReactNode })
     }));
     return { ok: true };
   }, []);
+
+  const updateJobFields = useCallback(
+    (id: string, fields: JobFreeFields, actor: SessionUser): ActionResult => {
+      const job = data.jobs.find((j) => j.id === id);
+      if (!job) return { ok: false, message: "Job tidak ditemukan." };
+      if (!canFreeEditJob(job.status, actor.role) && !canEditJobDueOrScope(job.status, actor.role)) {
+        return { ok: false, message: "Field job terkunci untuk peran atau status ini." };
+      }
+      const dueDate = fields.dueDate ?? job.dueDate;
+      if (dueDate && !isValidDueDate(dueDate)) {
+        return { ok: false, message: "Due date tidak valid (gunakan tanggal kalender Asia/Jakarta)." };
+      }
+      setData((prev) => ({
+        ...prev,
+        jobs: prev.jobs.map((j) => {
+          if (j.id !== id) return j;
+          return {
+            ...j,
+            dueDate:
+              fields.dueDate !== undefined && canEditJobDueOrScope(j.status, actor.role)
+                ? fields.dueDate
+                : j.dueDate,
+            scope:
+              fields.scope !== undefined && canEditJobDueOrScope(j.status, actor.role)
+                ? fields.scope
+                : j.scope,
+            siteId:
+              fields.siteId !== undefined && canEditJobSite(j.status, actor.role) && fields.siteId.trim()
+                ? fields.siteId.trim()
+                : j.siteId,
+            customerId:
+              fields.customerId !== undefined && canChangeJobCustomer(j.status, actor.role) && fields.customerId.trim()
+                ? fields.customerId.trim()
+                : j.customerId,
+          };
+        }),
+      }));
+      return { ok: true };
+    },
+    [data.jobs],
+  );
+
+  const transitionJobStatus = useCallback(
+    (id: string, toStatus: string, actor: SessionUser, extra?: { reason?: string | null }): ActionResult => {
+      const job = data.jobs.find((j) => j.id === id);
+      if (!job) return { ok: false, message: "Job tidak ditemukan." };
+      const legal = jobActionsFor(job, actor).some(
+        (action) => action.toStatus === toStatus && action.allowed,
+      );
+      if (!legal) return { ok: false, message: "Transisi status tidak diizinkan untuk peran ini." };
+      if (toStatus === "cancelled" && isSamplingOrLater(job.status) && !extra?.reason?.trim()) {
+        return { ok: false, message: "Alasan pembatalan wajib setelah sampling." };
+      }
+      setData((prev) => ({
+        ...prev,
+        jobs: prev.jobs.map((j) =>
+          j.id === id
+            ? { ...j, status: toStatus as Job["status"] }
+            : j,
+        ),
+      }));
+      return { ok: true };
+    },
+    [data.jobs],
+  );
 
   const createSampling = useCallback((input: Omit<SamplingEvent, "id" | "status">) => {
     const id = uid("se");
@@ -693,6 +768,8 @@ export function FixtureLimsProvider({ children }: { children: React.ReactNode })
       upsertSite,
       createJob,
       scheduleJob,
+      updateJobFields,
+      transitionJobStatus,
       createSampling,
       markSamplingDone,
       createSample,
@@ -718,6 +795,8 @@ export function FixtureLimsProvider({ children }: { children: React.ReactNode })
       upsertSite,
       createJob,
       scheduleJob,
+      updateJobFields,
+      transitionJobStatus,
       createSampling,
       markSamplingDone,
       createSample,
