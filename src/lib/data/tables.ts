@@ -18,9 +18,9 @@ export const TABLE_CANDIDATES = {
   audit: ["audit_logs"],
 } as const;
 
-/** public.samples columns verified in Backend migrations (incl. dual-control). */
+/** Backend-locked public.samples select — exact list, nothing else. */
 export const SAMPLE_SELECT =
-  "id, job_id, sampling_event_id, sample_code, barcode, matrix_id, collected_at, received_at, hold_time_hours, storage_location, status, notes, receive_notes, created_at, updated_at, verified_by, verified_at, approved_by, approved_at";
+  "id, job_id, sampling_event_id, sample_code, barcode, matrix_id, collected_at, received_at, hold_time_hours, storage_location, status, notes, created_at, updated_at, verified_by, verified_at, approved_by, approved_at, receive_notes";
 
 export function resolveTable(key: keyof typeof TABLE_CANDIDATES) {
   const name = TABLE_CANDIDATES[key][0];

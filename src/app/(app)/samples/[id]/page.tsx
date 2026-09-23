@@ -40,7 +40,9 @@ export default function SampleDetailPage() {
     receiveSample,
   } = useLims();
 
-  const sample = data.samples.find((s) => s.id === params.id);
+  const sample = data.samples.find(
+    (s) => s.id === params.id || s.sampleCode === params.id || s.sampleNo === params.id,
+  );
   const job = data.jobs.find((j) => j.id === sample?.jobId);
   const formRef = useRef<HTMLFormElement>(null);
   const [message, setMessage] = useState<string | null>(null);
