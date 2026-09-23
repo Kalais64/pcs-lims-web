@@ -1,0 +1,121 @@
+"use client";
+
+import { useMemo, useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { ROLE_LABELS, ROLES, type Role } from "@/lib/auth/types";
+import { DEMO_PASSWORD, DEMO_USERS } from "@/lib/fixtures/users";
+import { useAuth } from "@/lib/hooks/use-auth";
+
+export default function LoginPage() {
+  const { login, loginAsRole } = useAuth();
+  const [role, setRole] = useState<Role>("admin");
+  const [email, setEmail] = useState(DEMO_USERS[0].email);
+  const [password, setPassword] = useState(DEMO_PASSWORD);
+  const [error, setError] = useState<string | null>(null);
+
+  const hint = useMemo(
+    () => DEMO_USERS.find((user) => user.role === role)?.email ?? "",
+    [role],
+  );
+
+  function applyRole(next: Role) {
+    setRole(next);
+    const demo = DEMO_USERS.find((user) => user.role === next);
+    if (demo) {
+      setEmail(demo.email);
+      setPassword(DEMO_PASSWORD);
+    }
+    setError(null);
+  }
+
+  function onSubmit(event: React.FormEvent) {
+    event.preventDefault();
+    const result = login(email, password, role);
+    if (!result.ok) setError(result.message);
+  }
+
+  return (
+    <div className="flex min-h-screen items-center justify-center bg-[linear-gradient(180deg,#073f66,#0b6d9e)] px-4 py-10">
+      <Card className="w-full max-w-md border-0 shadow-xl">
+        <CardHeader className="space-y-1">
+          <p className="text-xs font-semibold tracking-wide text-[#168cc5]">PCS LABORATORY</p>
+          <CardTitle className="text-2xl text-[#0a4f7b]">Masuk ke PCS LIMS</CardTitle>
+          <CardDescription>
+            Otentikasi mock untuk demo peran. Kata sandi semua akun:{" "}
+            <span className="font-medium text-[#183042]">{DEMO_PASSWORD}</span>
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <form className="space-y-4" onSubmit={onSubmit}>
+            <div className="space-y-2">
+              <Label htmlFor="role">Peran</Label>
+              <Select value={role} onValueChange={(value) => applyRole(value as Role)}>
+                <SelectTrigger id="role" className="w-full">
+                  <SelectValue placeholder="Pilih peran" />
+                </SelectTrigger>
+                <SelectContent>
+                  {ROLES.map((item) => (
+                    <SelectItem key={item} value={item}>
+                      {ROLE_LABELS[item]}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-[#6b7d89]">Akun demo: {hint}</p>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="email">Email</Label>
+              <Input
+                id="email"
+                type="email"
+                autoComplete="username"
+                value={email}
+                onChange={(event) => setEmail(event.target.value)}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="password">Kata sandi</Label>
+              <Input
+                id="password"
+                type="password"
+                autoComplete="current-password"
+                value={password}
+                onChange={(event) => setPassword(event.target.value)}
+              />
+            </div>
+            {error ? <p className="text-sm text-red-600">{error}</p> : null}
+            <Button type="submit" className="w-full bg-[#168cc5] hover:bg-[#0a4f7b]">
+              Masuk
+            </Button>
+          </form>
+          <div className="mt-6 border-t border-[#dce7ee] pt-4">
+            <p className="mb-2 text-xs text-[#6b7d89]">Atau masuk langsung sebagai peran</p>
+            <div className="grid grid-cols-2 gap-2">
+              {ROLES.map((item) => (
+                <Button
+                  key={item}
+                  type="button"
+                  variant="outline"
+                  className="justify-start text-xs"
+                  onClick={() => loginAsRole(item)}
+                >
+                  {ROLE_LABELS[item]}
+                </Button>
+              ))}
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
