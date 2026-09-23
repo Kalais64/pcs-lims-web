@@ -21,7 +21,12 @@ export function useDashboardStats() {
     const today = new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Jakarta" }).format(new Date());
     const weekFromNow = Date.now() + 7 * 24 * 60 * 60 * 1000;
     const activeJobs = data.jobs.filter((j) => ACTIVE_JOB.has(j.status));
-    const dueThisWeek = activeJobs.filter((j) => new Date(`${j.dueDate}T00:00:00`).getTime() <= weekFromNow).length;
+    const dueThisWeek = activeJobs.filter((j) => {
+      const raw = j.dueDate?.trim();
+      if (!raw) return false;
+      const due = new Date(raw.includes("T") ? raw : `${raw}T00:00:00`);
+      return !Number.isNaN(due.getTime()) && due.getTime() <= weekFromNow;
+    }).length;
     const samplingToday = data.samplingEvents.filter((e) => e.date === today && e.status === "scheduled");
     const sites = new Set(samplingToday.map((e) => e.siteId));
     const inTesting = data.samples.filter((s) => s.status === "in_testing").length;

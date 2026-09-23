@@ -14,16 +14,13 @@ import {
 } from "@/components/ui/table";
 import { canAccessPath } from "@/lib/auth/nav";
 import { ROLE_LABELS } from "@/lib/auth/types";
+import { formatDateId } from "@/lib/datetime";
 import { WORKFLOW_STEPS } from "@/lib/fixtures/dashboard";
 import { useAuth } from "@/lib/hooks/use-auth";
 import { useDashboardStats } from "@/lib/hooks/use-dashboard-stats";
 
 function formatDueDate(iso: string) {
-  return new Intl.DateTimeFormat("id-ID", {
-    day: "2-digit",
-    month: "short",
-    year: "numeric",
-  }).format(new Date(`${iso}T00:00:00`));
+  return formatDateId(iso);
 }
 
 export default function DashboardPage() {

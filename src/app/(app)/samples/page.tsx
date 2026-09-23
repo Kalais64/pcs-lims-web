@@ -27,10 +27,11 @@ import {
 import { useAuth } from "@/lib/hooks/use-auth";
 import { SAMPLE_STATUSES, SAMPLE_STATUS_LABELS } from "@/lib/status/sample";
 import { useLims } from "@/lib/store/lims-provider";
+import { formatDateTimeId, safeIso } from "@/lib/datetime";
 
 export default function SamplesPage() {
   const { user } = useAuth();
-  const { data, createSample, receiveSample } = useLims();
+  const { data, createSample, receiveSample, loadError, isLoading } = useLims();
   const canCreate = user && ["admin", "sampler", "analyst", "sales"].includes(user.role);
   const [status, setStatus] = useState("all");
   const [jobId, setJobId] = useState("all");
@@ -44,7 +45,7 @@ export default function SamplesPage() {
   const [nowLocal, setNowLocal] = useState("");
 
   useEffect(() => {
-    setNowLocal(new Date().toISOString().slice(0, 16));
+    setNowLocal(safeIso().slice(0, 16));
   }, []);
 
   const rows = useMemo(
@@ -124,8 +125,11 @@ export default function SamplesPage() {
             {rows.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={8} className="text-[#5d7266]">
-                  Tidak ada sampel. Jika seed Backend ada (mis. PCS-S-260923-001), periksa RLS SELECT
-                  pada tabel samples.
+                  {isLoading
+                    ? "Memuat sampel…"
+                    : loadError
+                      ? `Gagal memuat daftar: ${loadError}`
+                      : "Tidak ada sampel untuk filter ini. Verifier/Approver melihat semua status termasuk Menunggu verifikasi (tanpa filter peran)."}
                 </TableCell>
               </TableRow>
             ) : (
@@ -142,7 +146,7 @@ export default function SamplesPage() {
                   <TableCell>{job?.jobNo}</TableCell>
                   <TableCell>{matrix?.name}</TableCell>
                   <TableCell>
-                    {s.receivedAt ? new Date(s.receivedAt).toLocaleString("id-ID") : "—"}
+                    {formatDateTimeId(s.receivedAt)}
                   </TableCell>
                   <TableCell className="max-w-[180px] truncate">{s.conditionNotes || "—"}</TableCell>
                   <TableCell>
@@ -174,7 +178,7 @@ export default function SamplesPage() {
                           size="sm"
                           className="bg-[#16A34A] hover:bg-[#14532D]"
                           onClick={async () => {
-                            const iso = rec.at ? new Date(rec.at).toISOString() : new Date().toISOString();
+                            const iso = rec.at ? safeIso(rec.at) : safeIso();
                             const res = await receiveSample(s.id, iso, rec.notes);
                             setError(res.ok ? null : res.message);
                           }}
@@ -207,7 +211,7 @@ export default function SamplesPage() {
             <div className="space-y-1">
               <Label>Job</Label>
               <Select
-                value={createForm.jobId}
+                value={createForm.jobId || undefined}
                 onValueChange={(id) => {
                   const job = data.jobs.find((j) => j.id === id);
                   setCreateForm({
@@ -217,7 +221,7 @@ export default function SamplesPage() {
                 }}
               >
                 <SelectTrigger className="w-full">
-                  <SelectValue />
+                  <SelectValue placeholder="Pilih job" />
                 </SelectTrigger>
                 <SelectContent>
                   {data.jobs.map((j) => (
@@ -231,7 +235,7 @@ export default function SamplesPage() {
             <div className="space-y-1">
               <Label>Matriks</Label>
               <Select
-                value={createForm.matrixId}
+                value={createForm.matrixId || undefined}
                 onValueChange={(id) => setCreateForm({ ...createForm, matrixId: id })}
               >
                 <SelectTrigger className="w-full">

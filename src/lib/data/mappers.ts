@@ -88,7 +88,7 @@ export function unitsFromParameters(parameters: Parameter[]): Unit[] {
 export function mapJobs(data: unknown): Job[] {
   return asRows(data).map((row) => ({
     id: pickString(row, ["id"]),
-    jobNo: pickString(row, ["job_no", "job_number", "code"]),
+    jobNo: pickString(row, ["number", "job_no", "job_number", "code"]),
     customerId: pickString(row, ["customer_id"]),
     siteId: pickString(row, ["site_id", "customer_site_id"]),
     matrixId: pickString(row, ["matrix_id"]),
@@ -104,7 +104,7 @@ export function mapSampling(data: unknown): SamplingEvent[] {
     id: pickString(row, ["id"]),
     jobId: pickString(row, ["job_id"]),
     siteId: pickString(row, ["site_id", "customer_site_id"]),
-    date: dateOnly(pickString(row, ["date", "scheduled_date", "sampling_date", "sampled_at"])),
+    date: dateOnly(pickString(row, ["date", "scheduled_date", "sampling_date"])),
     petugas: pickString(row, ["petugas", "sampler_name", "officer_name", "assigned_to_name"]),
     status: pickString(row, ["status"], "scheduled") as SamplingStatus,
   }));
@@ -113,27 +113,26 @@ export function mapSampling(data: unknown): SamplingEvent[] {
 export function mapSamples(data: unknown): Sample[] {
   return asRows(data)
     .map((row) => {
-      const sampleNo = pickString(row, ["sample_no", "sample_number", "code", "number", "sample_id"]);
-      const sampleCode = pickString(row, ["sample_code", "client_code", "customer_code"]);
-      const id = pickString(row, ["id", "sample_id"], sampleNo);
-      const receiveNotes = pickString(row, ["receive_notes", "condition_notes"]);
+      const sampleCode = pickString(row, ["sample_code"]);
+      const id = pickString(row, ["id"]);
+      const receiveNotes = pickString(row, ["receive_notes"]);
       return {
         id,
-        sampleNo: sampleNo || sampleCode || id,
-        sampleCode: sampleCode || sampleNo || id,
-        jobId: pickString(row, ["job_id", "job_order_id"]),
-        matrixId: pickString(row, ["matrix_id", "sample_matrix_id"]),
+        sampleNo: sampleCode || id,
+        sampleCode: sampleCode || id,
+        jobId: pickString(row, ["job_id"]),
+        matrixId: pickString(row, ["matrix_id"]),
         status: normalizeSampleStatus(pickString(row, ["status"])),
         receivedAt: pickNullable(row, ["received_at"]),
-        collectedAt: pickNullable(row, ["collected_at", "sampled_at", "sampling_at"]),
-        barcode: pickString(row, ["barcode", "barcode_value"]),
-        storageLocation: pickString(row, ["storage_location", "location", "storage"]),
+        collectedAt: pickNullable(row, ["collected_at"]),
+        barcode: pickString(row, ["barcode"]),
+        storageLocation: pickString(row, ["storage_location"]),
         conditionNotes: receiveNotes,
-        notes: pickString(row, ["notes", "remark", "remarks"]),
-        verifiedById: pickNullable(row, ["verified_by", "verified_by_id", "verifier_id"]),
-        approvedById: pickNullable(row, ["approved_by", "approved_by_id", "approver_id"]),
-        rejectReason: pickNullable(row, ["reject_reason", "rejection_reason"]),
-        createdAt: pickString(row, ["created_at"], new Date().toISOString()),
+        notes: pickString(row, ["notes"]),
+        verifiedById: pickNullable(row, ["verified_by"]),
+        approvedById: pickNullable(row, ["approved_by"]),
+        rejectReason: null,
+        createdAt: pickString(row, ["created_at"]) || new Date().toISOString(),
       };
     })
     .filter((row) => row.id);
@@ -196,8 +195,5 @@ export function asParameters(data: unknown): Parameter[] {
   return mapParameters(data);
 }
 export function asMethods(data: unknown): Method[] {
-  return mapNamed(data);
-}
-export function asUnits(data: unknown): Unit[] {
   return mapNamed(data);
 }

@@ -1,6 +1,7 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 import { publicSupabaseAnonKey, publicSupabaseUrl } from "@/lib/config/runtime";
+import { limsFetch } from "@/lib/supabase/lims-fetch";
 
 export async function refreshSupabaseSession(request: NextRequest) {
   const url = publicSupabaseUrl();
@@ -9,6 +10,7 @@ export async function refreshSupabaseSession(request: NextRequest) {
   if (!url || !key) return { response, user: null };
 
   const supabase = createServerClient(url, key, {
+    global: { fetch: limsFetch },
     cookies: {
       getAll() {
         return request.cookies.getAll();

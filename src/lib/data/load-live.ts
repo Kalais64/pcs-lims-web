@@ -16,7 +16,7 @@ import {
   mapSites,
   unitsFromParameters,
 } from "@/lib/data/mappers";
-import { selectAll, TABLE_CANDIDATES, resolveTable } from "@/lib/data/tables";
+import { SAMPLE_SELECT, selectAll } from "@/lib/data/tables";
 import type { LimsData, Sample } from "@/lib/domain/types";
 
 async function safe<T>(fn: () => Promise<T>, fallback: T): Promise<{ value: T; error?: string }> {
@@ -27,56 +27,10 @@ async function safe<T>(fn: () => Promise<T>, fallback: T): Promise<{ value: T; e
   }
 }
 
-const SAMPLE_COLUMNS = [
-  "id",
-  "sample_id",
-  "sample_no",
-  "sample_number",
-  "sample_code",
-  "client_code",
-  "code",
-  "job_id",
-  "matrix_id",
-  "status",
-  "received_at",
-  "collected_at",
-  "sampled_at",
-  "barcode",
-  "storage_location",
-  "condition_notes",
-  "receive_notes",
-  "notes",
-  "verified_by",
-  "verified_by_id",
-  "approved_by",
-  "approved_by_id",
-  "reject_reason",
-  "rejection_reason",
-  "created_at",
-].join(",");
-
 async function loadSamples(client: SupabaseClient): Promise<Sample[]> {
-  let last = "";
-  for (const name of TABLE_CANDIDATES.samples) {
-    const full = await client.from(name).select("*");
-    if (!full.error && full.data) {
-      return mapSamples(full.data);
-    }
-    last = full.error?.message ?? last;
-    const slim = await client.from(name).select(SAMPLE_COLUMNS);
-    if (!slim.error && slim.data) {
-      return mapSamples(slim.data);
-    }
-    last = slim.error?.message ?? last;
-  }
-  try {
-    const table = await resolveTable(client, "samples", TABLE_CANDIDATES.samples);
-    const { data, error } = await client.from(table).select("*");
-    if (error) throw new Error(error.message);
-    return mapSamples(data);
-  } catch (error) {
-    throw new Error(last || (error instanceof Error ? error.message : "Gagal memuat samples."));
-  }
+  const { data, error } = await client.from("samples").select(SAMPLE_SELECT);
+  if (error) throw new Error(error.message);
+  return mapSamples(data);
 }
 
 export async function loadLiveData(client: SupabaseClient): Promise<{ data: LimsData; error: string | null }> {
