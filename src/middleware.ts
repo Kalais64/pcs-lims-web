@@ -10,7 +10,9 @@ export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
   const aliases: Record<string, string> = {
     "/customer": "/customers",
+    "/customer/": "/customers",
     "/invoice": "/invoices",
+    "/invoice/": "/invoices",
   };
   if (aliases[pathname]) {
     const url = request.nextUrl.clone();

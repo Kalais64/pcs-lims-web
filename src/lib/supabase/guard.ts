@@ -1,8 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { isForbiddenTable } from "@/lib/data/forbidden";
 
-const BLOCKED = new Set(["units", "unit", "lab_samples", "sample_records"]);
-
 function blockedBuilder() {
   const result = { data: null, error: { message: "blocked table", code: "PGRST205" } };
   const builder: Record<string, unknown> = {};
@@ -29,6 +27,14 @@ function blockedBuilder() {
     "filter",
     "match",
     "not",
+    "or",
+    "contains",
+    "containedBy",
+    "abortSignal",
+    "csv",
+    "throwOnError",
+    "returns",
+    "overrideTypes",
   ]) {
     builder[method] = chain;
   }
@@ -38,13 +44,18 @@ function blockedBuilder() {
 
 /** Never issue HTTP to units / lab_samples / sample_records. */
 export function guardSupabase<T extends SupabaseClient>(client: T): T {
-  const original = client.from.bind(client);
-  const from = (relation: string) => {
-    if (isForbiddenTable(relation) || BLOCKED.has(relation)) {
-      return blockedBuilder();
-    }
-    return original(relation);
-  };
-  Object.assign(client, { from });
-  return client;
+  return new Proxy(client, {
+    get(target, prop, receiver) {
+      if (prop === "from") {
+        return (relation: string) => {
+          if (isForbiddenTable(relation)) {
+            return blockedBuilder();
+          }
+          return target.from(relation);
+        };
+      }
+      const value = Reflect.get(target, prop, receiver);
+      return typeof value === "function" ? (value as (...args: unknown[]) => unknown).bind(target) : value;
+    },
+  }) as T;
 }

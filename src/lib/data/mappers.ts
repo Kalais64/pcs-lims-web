@@ -104,7 +104,7 @@ export function mapSampling(data: unknown): SamplingEvent[] {
     id: pickString(row, ["id"]),
     jobId: pickString(row, ["job_id"]),
     siteId: pickString(row, ["site_id", "customer_site_id"]),
-    date: dateOnly(pickString(row, ["date", "scheduled_date", "sampling_date", "sampled_at"])),
+    date: dateOnly(pickString(row, ["date", "scheduled_date", "sampling_date"])),
     petugas: pickString(row, ["petugas", "sampler_name", "officer_name", "assigned_to_name"]),
     status: pickString(row, ["status"], "scheduled") as SamplingStatus,
   }));
@@ -195,8 +195,5 @@ export function asParameters(data: unknown): Parameter[] {
   return mapParameters(data);
 }
 export function asMethods(data: unknown): Method[] {
-  return mapNamed(data);
-}
-export function asUnits(data: unknown): Unit[] {
   return mapNamed(data);
 }

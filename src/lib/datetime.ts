@@ -1,3 +1,5 @@
+const JAKARTA = "Asia/Jakarta";
+
 /** Safe calendar/time formatting — never throw "Invalid time value". */
 export function parseDate(value: string | number | Date | null | undefined): Date | null {
   if (value == null || value === "") return null;
@@ -21,6 +23,7 @@ export function formatDateTimeId(value: string | number | Date | null | undefine
   if (!date) return empty;
   try {
     return new Intl.DateTimeFormat("id-ID", {
+      timeZone: JAKARTA,
       dateStyle: "short",
       timeStyle: "short",
     }).format(date);
@@ -35,6 +38,7 @@ export function formatDateId(value: string | number | Date | null | undefined, e
     if (!date) return empty;
     try {
       return new Intl.DateTimeFormat("id-ID", {
+        timeZone: JAKARTA,
         day: "2-digit",
         month: "short",
         year: "numeric",
@@ -48,6 +52,7 @@ export function formatDateId(value: string | number | Date | null | undefined, e
   if (!date) return empty;
   try {
     return new Intl.DateTimeFormat("id-ID", {
+      timeZone: JAKARTA,
       day: "2-digit",
       month: "short",
       year: "numeric",

@@ -88,7 +88,9 @@ export const NAV_ITEMS: readonly NavItem[] = [
 
 const PATH_ALIASES: Record<string, string> = {
   "/customer": "/customers",
+  "/customer/": "/customers",
   "/invoice": "/invoices",
+  "/invoice/": "/invoices",
 };
 
 export function canAccessPath(role: Role, pathname: string): boolean {

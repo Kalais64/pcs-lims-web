@@ -221,7 +221,7 @@ export default function SampleDetailPage() {
           <div className="space-y-1">
             <Label>Matriks</Label>
             <Select
-              value={form.matrixId}
+              value={form.matrixId || undefined}
               onValueChange={(id) => setForm({ ...form, matrixId: id })}
               disabled={!editable}
             >

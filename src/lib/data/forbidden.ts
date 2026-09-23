@@ -1,7 +1,18 @@
-/** Backend schema facts — do not query these. */
+/** Backend schema facts — do not query these tables over HTTP. */
 export const FORBIDDEN_TABLES = new Set(["units", "unit", "lab_samples", "sample_records"]);
 
-export const FORBIDDEN_COLUMNS = new Set(["client_code"]);
+/** Phantom sample columns — never SELECT or write these on public.samples. */
+export const FORBIDDEN_COLUMNS = new Set([
+  "client_code",
+  "sample_no",
+  "sample_number",
+  "sampled_at",
+  "condition_notes",
+  "verified_by_id",
+  "approved_by_id",
+  "reject_reason",
+  "rejection_reason",
+]);
 
 export function isForbiddenTable(name: string) {
   return FORBIDDEN_TABLES.has(name);

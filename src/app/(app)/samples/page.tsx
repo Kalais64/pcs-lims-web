@@ -211,7 +211,7 @@ export default function SamplesPage() {
             <div className="space-y-1">
               <Label>Job</Label>
               <Select
-                value={createForm.jobId}
+                value={createForm.jobId || undefined}
                 onValueChange={(id) => {
                   const job = data.jobs.find((j) => j.id === id);
                   setCreateForm({
@@ -221,7 +221,7 @@ export default function SamplesPage() {
                 }}
               >
                 <SelectTrigger className="w-full">
-                  <SelectValue />
+                  <SelectValue placeholder="Pilih job" />
                 </SelectTrigger>
                 <SelectContent>
                   {data.jobs.map((j) => (
@@ -235,7 +235,7 @@ export default function SamplesPage() {
             <div className="space-y-1">
               <Label>Matriks</Label>
               <Select
-                value={createForm.matrixId}
+                value={createForm.matrixId || undefined}
                 onValueChange={(id) => setCreateForm({ ...createForm, matrixId: id })}
               >
                 <SelectTrigger className="w-full">

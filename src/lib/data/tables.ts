@@ -1,5 +1,8 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { isForbiddenTable, missingColumnName, stripForbiddenColumns } from "@/lib/data/forbidden";
+import { SAMPLE_SELECT } from "@/lib/data/samples-schema";
+
+export { SAMPLE_SELECT } from "@/lib/data/samples-schema";
 
 /** Locked public schema names — no HTTP probes, no alias fallbacks. */
 export const TABLE_CANDIDATES = {
@@ -18,10 +21,6 @@ export const TABLE_CANDIDATES = {
   audit: ["audit_logs"],
 } as const;
 
-/** Backend-locked public.samples select — exact list, nothing else. */
-export const SAMPLE_SELECT =
-  "id, job_id, sampling_event_id, sample_code, barcode, matrix_id, collected_at, received_at, hold_time_hours, storage_location, status, notes, created_at, updated_at, verified_by, verified_at, approved_by, approved_at, receive_notes";
-
 export function resolveTable(key: keyof typeof TABLE_CANDIDATES) {
   const name = TABLE_CANDIDATES[key][0];
   if (isForbiddenTable(name)) {
@@ -32,7 +31,8 @@ export function resolveTable(key: keyof typeof TABLE_CANDIDATES) {
 
 export async function selectAll(client: SupabaseClient, key: keyof typeof TABLE_CANDIDATES) {
   const table = resolveTable(key);
-  const { data, error } = await client.from(table).select("*");
+  const select = key === "samples" ? SAMPLE_SELECT : "*";
+  const { data, error } = await client.from(table).select(select);
   if (error) throw new Error(error.message);
   return { table, data };
 }
