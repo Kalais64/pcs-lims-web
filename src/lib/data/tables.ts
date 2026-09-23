@@ -6,7 +6,7 @@ function isMissingTable(message: string) {
   return /does not exist|PGRST205|schema cache|not find/i.test(message);
 }
 
-export async function resolveTable(client: SupabaseClient, key: string, names: string[]) {
+export async function resolveTable(client: SupabaseClient, key: string, names: readonly string[]) {
   const hit = cache.get(key);
   if (hit) return hit;
   let last = "";
@@ -39,7 +39,7 @@ export const TABLE_CANDIDATES = {
   lhu: ["lhu_documents", "lhu_records"],
   invoices: ["invoices"],
   audit: ["audit_logs"],
-} as const;
+};
 
 /** Backend has no units table — satuan lives on parameters.unit / satuan / default_unit. */
 
