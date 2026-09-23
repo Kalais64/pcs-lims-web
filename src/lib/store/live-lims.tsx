@@ -12,14 +12,32 @@ import {
   transitionSample,
 } from "@/lib/data/rpc";
 import { nextInvoiceNo, nextJobNo, nextLhuNo, nextSampleNo, nowIso } from "@/lib/domain/ids";
-import type { Invoice, LimsData, SamplingEvent } from "@/lib/domain/types";
+import type { Invoice, LimsData, SampleFreeFields, SamplingEvent } from "@/lib/domain/types";
 import { createBrowserSupabase } from "@/lib/supabase/browser";
 import { deriveJobStatus } from "@/lib/store/sync-job";
 import { LimsContext, type ActionResult, type LimsContextValue } from "@/lib/store/context";
 import type { RuntimeMode } from "@/lib/config/runtime";
+import { canFreeEditSample, SAMPLE_ARCHIVE_STATUSES, submitTarget } from "@/lib/status/sample-gate";
 
 function fail(message: string): ActionResult {
   return { ok: false, message };
+}
+
+function sampleFieldPayloads(fields: SampleFreeFields): Record<string, unknown>[] {
+  const base = {
+    matrix_id: fields.matrixId,
+    sample_code: fields.sampleCode,
+    receive_notes: fields.receiveNotes,
+    notes: fields.notes,
+    barcode: fields.barcode,
+    storage_location: fields.storageLocation,
+    collected_at: fields.collectedAt,
+  };
+  return [
+    base,
+    { ...base, condition_notes: fields.receiveNotes },
+    { ...base, client_code: fields.sampleCode, sampled_at: fields.collectedAt, location: fields.storageLocation },
+  ];
 }
 
 async function syncJob(client: SupabaseClient, data: LimsData, jobId: string) {
@@ -221,7 +239,33 @@ export function LiveLimsProvider({
             status: "expected",
           },
         ]);
-        await syncJob(client, { ...data, samples: [...data.samples, { ...input, id, sampleNo, status: "expected", receivedAt: null, conditionNotes: "", verifiedById: null, approvedById: null, rejectReason: null, createdAt: nowIso() }] }, input.jobId);
+        await syncJob(
+          client,
+          {
+            ...data,
+            samples: [
+              ...data.samples,
+              {
+                ...input,
+                id,
+                sampleNo,
+                sampleCode: "",
+                status: "expected",
+                receivedAt: null,
+                collectedAt: null,
+                barcode: "",
+                storageLocation: "",
+                conditionNotes: "",
+                notes: "",
+                verifiedById: null,
+                approvedById: null,
+                rejectReason: null,
+                createdAt: nowIso(),
+              },
+            ],
+          },
+          input.jobId,
+        );
         await refresh();
         return { ok: true };
       });
@@ -239,6 +283,59 @@ export function LiveLimsProvider({
         const res = await transitionSample(client, id, "received");
         const sample = data.samples.find((s) => s.id === id);
         if (sample) await syncJob(client, data, sample.jobId);
+        await refresh();
+        return res;
+      }),
+    [data, refresh, withClient],
+  );
+
+  const updateSampleFields: LimsContextValue["updateSampleFields"] = useCallback(
+    (id, fields) =>
+      withClient(async (client) => {
+        const sample = data.samples.find((s) => s.id === id);
+        if (!sample) return fail("Sampel tidak ditemukan.");
+        if (!canFreeEditSample(sample.status, "admin")) {
+          return fail("Field kritis terkunci setelah pengujian dimulai. Hanya aksi status.");
+        }
+        await updateRow(client, "samples", id, sampleFieldPayloads(fields));
+        await refresh();
+        return { ok: true };
+      }),
+    [data.samples, refresh, withClient],
+  );
+
+  const archiveSample: LimsContextValue["archiveSample"] = useCallback(
+    (id, actor, reason) =>
+      withClient(async (client) => {
+        if (!["admin", "sampler", "analyst"].includes(actor.role)) {
+          return fail("Peran ini tidak boleh mengarsipkan sampel.");
+        }
+        const sample = data.samples.find((s) => s.id === id);
+        if (!sample) return fail("Sampel tidak ditemukan.");
+        if (!SAMPLE_ARCHIVE_STATUSES.includes(sample.status)) {
+          return fail("Arsip hanya dari Diharapkan atau Diterima. Hapus keras dilarang.");
+        }
+        const res = await transitionSample(client, id, "archived", {
+          reason: reason?.trim() || "Arsip sampel",
+        });
+        if (sample) await syncJob(client, data, sample.jobId);
+        await refresh();
+        return res;
+      }),
+    [data, refresh, withClient],
+  );
+
+  const startTesting: LimsContextValue["startTesting"] = useCallback(
+    (sampleId) =>
+      withClient(async (client) => {
+        const sample = data.samples.find((s) => s.id === sampleId);
+        if (!sample) return fail("Sampel tidak ditemukan.");
+        const to = submitTarget(sample.status);
+        if (sample.status !== "received" || to !== "in_testing") {
+          return fail("Kirim ke pengujian hanya dari status Diterima.");
+        }
+        const res = await transitionSample(client, sampleId, "in_testing");
+        await syncJob(client, data, sample.jobId);
         await refresh();
         return res;
       }),
@@ -266,8 +363,11 @@ export function LiveLimsProvider({
             },
           ]);
         }
-        const res = await transitionSample(client, sampleId, "in_testing");
         const sample = data.samples.find((s) => s.id === sampleId);
+        let res: ActionResult = { ok: true };
+        if (sample?.status === "received") {
+          res = await transitionSample(client, sampleId, "in_testing");
+        }
         if (sample) await syncJob(client, data, sample.jobId);
         await refresh();
         return res;
@@ -278,9 +378,14 @@ export function LiveLimsProvider({
   const submitForVerify: LimsContextValue["submitForVerify"] = useCallback(
     (sampleId) =>
       withClient(async (client) => {
-        const res = await transitionSample(client, sampleId, "pending_verify");
         const sample = data.samples.find((s) => s.id === sampleId);
-        if (sample) await syncJob(client, data, sample.jobId);
+        if (!sample) return fail("Sampel tidak ditemukan.");
+        const to = submitTarget(sample.status);
+        if (to !== "pending_verify") {
+          return fail("Kirim verifikasi dari status Pengujian atau Ditolak.");
+        }
+        const res = await transitionSample(client, sampleId, "pending_verify");
+        await syncJob(client, data, sample.jobId);
         await refresh();
         return res;
       }),
@@ -436,6 +541,9 @@ export function LiveLimsProvider({
       markSamplingDone,
       createSample,
       receiveSample,
+      updateSampleFields,
+      archiveSample,
+      startTesting,
       saveResults,
       submitForVerify,
       verifySample,
@@ -460,6 +568,9 @@ export function LiveLimsProvider({
       markSamplingDone,
       createSample,
       receiveSample,
+      updateSampleFields,
+      archiveSample,
+      startTesting,
       saveResults,
       submitForVerify,
       verifySample,

@@ -57,15 +57,30 @@ export type SamplingEvent = {
 export type Sample = {
   id: string;
   sampleNo: string;
+  sampleCode: string;
   jobId: string;
   matrixId: string;
   status: SampleStatus;
   receivedAt: string | null;
+  collectedAt: string | null;
+  barcode: string;
+  storageLocation: string;
   conditionNotes: string;
+  notes: string;
   verifiedById: string | null;
   approvedById: string | null;
   rejectReason: string | null;
   createdAt: string;
+};
+
+export type SampleFreeFields = {
+  matrixId: string;
+  sampleCode: string;
+  receiveNotes: string;
+  notes: string;
+  barcode: string;
+  storageLocation: string;
+  collectedAt: string | null;
 };
 
 export type TestResult = {

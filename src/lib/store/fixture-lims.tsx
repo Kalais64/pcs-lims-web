@@ -11,17 +11,18 @@ import type {
   LimsData,
   Method,
   Parameter,
-  Sample,
+  SampleFreeFields,
   SamplingEvent,
   TestResult,
   Unit,
 } from "@/lib/domain/types";
 import type { SessionUser } from "@/lib/auth/types";
 import { SEED_DATA } from "@/lib/fixtures/seed";
+import { canFreeEditSample, SAMPLE_ARCHIVE_STATUSES } from "@/lib/status/sample-gate";
 import { withSyncedJob } from "@/lib/store/sync-job";
 import { LimsContext, type ActionResult, type LimsContextValue } from "@/lib/store/context";
 
-const STORAGE_KEY = "pcs-lims-data-v2";
+const STORAGE_KEY = "pcs-lims-data-v3";
 
 function loadData(): LimsData {
   if (typeof window === "undefined") return SEED_DATA;
@@ -29,7 +30,7 @@ function loadData(): LimsData {
     const raw = window.localStorage.getItem(STORAGE_KEY);
     if (!raw) return structuredClone(SEED_DATA);
     const parsed = JSON.parse(raw) as LimsData;
-    if (parsed.version !== 2) return structuredClone(SEED_DATA);
+    if (parsed.version !== 2 && parsed.version !== 3) return structuredClone(SEED_DATA);
     return parsed;
   } catch {
     return structuredClone(SEED_DATA);
@@ -152,11 +153,16 @@ export function FixtureLimsProvider({ children }: { children: React.ReactNode })
           {
             id,
             sampleNo: nextSampleNo(prev.samples.map((s) => s.sampleNo)),
+            sampleCode: "",
             jobId: input.jobId,
             matrixId: input.matrixId,
             status: "expected",
             receivedAt: null,
+            collectedAt: null,
+            barcode: "",
+            storageLocation: "",
             conditionNotes: "",
+            notes: "",
             verifiedById: null,
             approvedById: null,
             rejectReason: null,
@@ -196,6 +202,100 @@ export function FixtureLimsProvider({ children }: { children: React.ReactNode })
     },
     [],
   );
+
+  const updateSampleFields = useCallback((id: string, fields: SampleFreeFields): ActionResult => {
+    let message = "";
+    setData((prev) => {
+      const sample = prev.samples.find((s) => s.id === id);
+      if (!sample) {
+        message = "Sampel tidak ditemukan.";
+        return prev;
+      }
+      if (!canFreeEditSample(sample.status, "admin")) {
+        message = "Field kritis terkunci setelah pengujian dimulai.";
+        return prev;
+      }
+      return {
+        ...prev,
+        samples: prev.samples.map((s) =>
+          s.id === id
+            ? {
+                ...s,
+                matrixId: fields.matrixId,
+                sampleCode: fields.sampleCode,
+                conditionNotes: fields.receiveNotes,
+                notes: fields.notes,
+                barcode: fields.barcode,
+                storageLocation: fields.storageLocation,
+                collectedAt: fields.collectedAt,
+              }
+            : s,
+        ),
+      };
+    });
+    return message ? { ok: false, message } : { ok: true };
+  }, []);
+
+  const archiveSample = useCallback((id: string, actor: SessionUser, reason?: string): ActionResult => {
+    if (!["admin", "sampler", "analyst"].includes(actor.role)) {
+      return { ok: false, message: "Peran ini tidak boleh mengarsipkan sampel." };
+    }
+    let message = "";
+    setData((prev) => {
+      const sample = prev.samples.find((s) => s.id === id);
+      if (!sample) {
+        message = "Sampel tidak ditemukan.";
+        return prev;
+      }
+      if (!SAMPLE_ARCHIVE_STATUSES.includes(sample.status)) {
+        message = "Arsip hanya dari Diharapkan atau Diterima. Hapus keras dilarang.";
+        return prev;
+      }
+      const next: LimsData = {
+        ...prev,
+        samples: prev.samples.map((s) => (s.id === id ? { ...s, status: "archived" as const } : s)),
+        auditLogs: [
+          ...prev.auditLogs,
+          {
+            id: uid("aud"),
+            actorId: actor.id,
+            entityType: "sample",
+            entityId: id,
+            fromStatus: sample.status,
+            toStatus: "archived",
+            override: false,
+            reason: reason?.trim() || "Arsip sampel",
+            createdAt: nowIso(),
+          },
+        ],
+      };
+      return withSyncedJob(next, sample.jobId);
+    });
+    return message ? { ok: false, message } : { ok: true };
+  }, []);
+
+  const startTesting = useCallback((sampleId: string): ActionResult => {
+    let message = "";
+    setData((prev) => {
+      const sample = prev.samples.find((s) => s.id === sampleId);
+      if (!sample) {
+        message = "Sampel tidak ditemukan.";
+        return prev;
+      }
+      if (sample.status !== "received") {
+        message = "Kirim ke pengujian hanya dari status Diterima.";
+        return prev;
+      }
+      const next: LimsData = {
+        ...prev,
+        samples: prev.samples.map((s) =>
+          s.id === sampleId ? { ...s, status: "in_testing" as const } : s,
+        ),
+      };
+      return withSyncedJob(next, sample.jobId);
+    });
+    return message ? { ok: false, message } : { ok: true };
+  }, []);
 
   const saveResults = useCallback(
     (sampleId: string, rows: Omit<TestResult, "id" | "sampleId">[], analystId: string): ActionResult => {
@@ -551,6 +651,9 @@ export function FixtureLimsProvider({ children }: { children: React.ReactNode })
       markSamplingDone,
       createSample,
       receiveSample,
+      updateSampleFields,
+      archiveSample,
+      startTesting,
       saveResults,
       submitForVerify,
       verifySample,
@@ -572,6 +675,9 @@ export function FixtureLimsProvider({ children }: { children: React.ReactNode })
       markSamplingDone,
       createSample,
       receiveSample,
+      updateSampleFields,
+      archiveSample,
+      startTesting,
       saveResults,
       submitForVerify,
       verifySample,

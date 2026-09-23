@@ -1,8 +1,11 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { PageHeader } from "@/components/lims/page-header";
 import { Panel } from "@/components/lims/panel";
+import { SampleStatusBar, type SampleGatedAction } from "@/components/status/sample-status-bar";
 import { StatusBadge } from "@/components/status/status-badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -16,6 +19,7 @@ import {
 } from "@/components/ui/select";
 import { useAuth } from "@/lib/hooks/use-auth";
 import { nowIso } from "@/lib/domain/ids";
+import { submitTarget } from "@/lib/status/sample-gate";
 import { useLims } from "@/lib/store/lims-provider";
 
 type Row = {
@@ -27,7 +31,9 @@ type Row = {
 
 export default function TestingPage() {
   const { user } = useAuth();
-  const { data, saveResults, submitForVerify } = useLims();
+  const router = useRouter();
+  const { data, saveResults, submitForVerify, startTesting, archiveSample, verifySample, approveSample } =
+    useLims();
   const [sampleId, setSampleId] = useState(
     data.samples.find((s) => ["received", "in_testing", "rejected"].includes(s.status))?.id ??
       data.samples[0]?.id ??
@@ -115,11 +121,56 @@ export default function TestingPage() {
             </Select>
           </div>
           {sample ? <StatusBadge entity="sample" status={sample.status} /> : null}
+          {sample ? (
+            <Link href={`/samples/${sample.id}`} className="text-sm text-[#16A34A] underline">
+              Detail sampel
+            </Link>
+          ) : null}
           {sample?.rejectReason ? (
             <p className="text-sm text-red-600">Ditolak: {sample.rejectReason}</p>
           ) : null}
         </div>
       </Panel>
+
+      {sample ? (
+        <SampleStatusBar
+          sample={sample}
+          user={user}
+          onAction={async (action: SampleGatedAction) => {
+            if (!user) return;
+            if (action.key === "edit") {
+              router.push(`/samples/${sample.id}`);
+              return;
+            }
+            if (action.key === "archive") {
+              const res = await archiveSample(sample.id, user);
+              setMessage(res.ok ? "Diarsipkan." : res.message);
+              return;
+            }
+            if (action.key === "submit") {
+              const to = submitTarget(sample.status);
+              const res =
+                to === "in_testing" ? await startTesting(sample.id) : await submitForVerify(sample.id);
+              setMessage(res.ok ? "Dikirim." : res.message);
+              return;
+            }
+            if (action.key === "verify") {
+              const res = await verifySample(sample.id, user);
+              setMessage(res.ok ? "Diverifikasi." : res.message);
+              return;
+            }
+            if (action.key === "approve") {
+              const res = await approveSample(sample.id, user, action.override);
+              setMessage(res.ok ? "Disetujui." : res.message);
+              return;
+            }
+            if (action.key === "reject") {
+              setMessage("Isi alasan penolakan di halaman detail sampel.");
+              router.push(`/samples/${sample.id}`);
+            }
+          }}
+        />
+      ) : null}
 
       <Panel title="Baris hasil uji">
         <div className="space-y-3">

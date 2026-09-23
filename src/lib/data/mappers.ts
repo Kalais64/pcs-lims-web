@@ -113,22 +113,23 @@ export function mapSampling(data: unknown): SamplingEvent[] {
 export function mapSamples(data: unknown): Sample[] {
   return asRows(data)
     .map((row) => {
-      const sampleNo = pickString(row, [
-        "sample_no",
-        "sample_number",
-        "sample_code",
-        "code",
-        "number",
-      ]);
+      const sampleNo = pickString(row, ["sample_no", "sample_number", "code", "number", "sample_id"]);
+      const sampleCode = pickString(row, ["sample_code", "client_code", "customer_code"]);
       const id = pickString(row, ["id", "sample_id"], sampleNo);
+      const receiveNotes = pickString(row, ["receive_notes", "condition_notes"]);
       return {
         id,
-        sampleNo: sampleNo || id,
+        sampleNo: sampleNo || sampleCode || id,
+        sampleCode: sampleCode || sampleNo || id,
         jobId: pickString(row, ["job_id", "job_order_id"]),
         matrixId: pickString(row, ["matrix_id", "sample_matrix_id"]),
         status: normalizeSampleStatus(pickString(row, ["status"])),
         receivedAt: pickNullable(row, ["received_at"]),
-        conditionNotes: pickString(row, ["condition_notes", "receive_notes", "notes"]),
+        collectedAt: pickNullable(row, ["collected_at", "sampled_at", "sampling_at"]),
+        barcode: pickString(row, ["barcode", "barcode_value"]),
+        storageLocation: pickString(row, ["storage_location", "location", "storage"]),
+        conditionNotes: receiveNotes,
+        notes: pickString(row, ["notes", "remark", "remarks"]),
         verifiedById: pickNullable(row, ["verified_by", "verified_by_id", "verifier_id"]),
         approvedById: pickNullable(row, ["approved_by", "approved_by_id", "approver_id"]),
         rejectReason: pickNullable(row, ["reject_reason", "rejection_reason"]),
