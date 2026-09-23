@@ -1,4 +1,4 @@
-import { SAMPLE_SELECT_COMPACT } from "@/lib/data/samples-schema";
+import { SAMPLE_SELECT_COMPACT } from "../data/samples-schema";
 
 const BLOCKED_TABLES = new Set(["units", "unit", "lab_samples", "sample_records"]);
 
