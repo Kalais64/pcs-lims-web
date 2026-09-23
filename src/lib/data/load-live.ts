@@ -16,8 +16,7 @@ import {
   mapSites,
   unitsFromParameters,
 } from "@/lib/data/mappers";
-import { FORBIDDEN_COLUMNS, missingColumnName } from "@/lib/data/forbidden";
-import { selectAll, TABLE_CANDIDATES, resolveTable } from "@/lib/data/tables";
+import { SAMPLE_SELECT, selectAll } from "@/lib/data/tables";
 import type { LimsData, Sample } from "@/lib/domain/types";
 
 async function safe<T>(fn: () => Promise<T>, fallback: T): Promise<{ value: T; error?: string }> {
@@ -28,58 +27,10 @@ async function safe<T>(fn: () => Promise<T>, fallback: T): Promise<{ value: T; e
   }
 }
 
-const SAMPLE_COLUMNS = [
-  "id",
-  "sample_id",
-  "sample_no",
-  "sample_number",
-  "sample_code",
-  "code",
-  "job_id",
-  "matrix_id",
-  "status",
-  "received_at",
-  "collected_at",
-  "sampled_at",
-  "barcode",
-  "storage_location",
-  "condition_notes",
-  "receive_notes",
-  "notes",
-  "verified_by",
-  "verified_by_id",
-  "approved_by",
-  "approved_by_id",
-  "reject_reason",
-  "rejection_reason",
-  "created_at",
-].join(",");
-
 async function loadSamples(client: SupabaseClient): Promise<Sample[]> {
-  let last = "";
-  for (const name of TABLE_CANDIDATES.samples) {
-    const columns = SAMPLE_COLUMNS.split(",").filter((col) => !FORBIDDEN_COLUMNS.has(col));
-    for (let attempt = 0; attempt < 12; attempt += 1) {
-      const { data, error } = await client.from(name).select(columns.join(","));
-      if (!error && data) return mapSamples(data);
-      last = error?.message ?? last;
-      const missing = error ? missingColumnName(error.message) : null;
-      if (missing && columns.includes(missing)) {
-        columns.splice(columns.indexOf(missing), 1);
-        continue;
-      }
-      break;
-    }
-  }
-  try {
-    const table = await resolveTable(client, "samples", TABLE_CANDIDATES.samples);
-    const columns = SAMPLE_COLUMNS.split(",").filter((col) => !FORBIDDEN_COLUMNS.has(col));
-    const { data, error } = await client.from(table).select(columns.join(","));
-    if (error) throw new Error(error.message);
-    return mapSamples(data);
-  } catch (error) {
-    throw new Error(last || (error instanceof Error ? error.message : "Gagal memuat samples."));
-  }
+  const { data, error } = await client.from("samples").select(SAMPLE_SELECT);
+  if (error) throw new Error(error.message);
+  return mapSamples(data);
 }
 
 export async function loadLiveData(client: SupabaseClient): Promise<{ data: LimsData; error: string | null }> {

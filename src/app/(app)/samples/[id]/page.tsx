@@ -21,7 +21,7 @@ import { useAuth } from "@/lib/hooks/use-auth";
 import { canFreeEditSample, criticalFieldsLocked, submitTarget } from "@/lib/status/sample-gate";
 import { staffName, useLims } from "@/lib/store/lims-provider";
 import type { ActionResult } from "@/lib/store/context";
-import { fromLocalInput, toLocalInput } from "@/lib/datetime";
+import { fromLocalInput, safeIso, toLocalInput } from "@/lib/datetime";
 
 export default function SampleDetailPage() {
   const params = useParams<{ id: string }>();
@@ -29,6 +29,7 @@ export default function SampleDetailPage() {
   const { user } = useAuth();
   const {
     data,
+    isLoading,
     updateSampleFields,
     archiveSample,
     startTesting,
@@ -124,7 +125,10 @@ export default function SampleDetailPage() {
   if (!sample) {
     return (
       <div className="space-y-4">
-        <PageHeader title="Sampel" description="Detail tidak ditemukan." />
+        <PageHeader
+          title="Sampel"
+          description={isLoading ? "Memuat sampel…" : "Detail tidak ditemukan."}
+        />
         <Link href="/samples" className="text-sm text-[#16A34A] underline">
           Kembali ke daftar
         </Link>
@@ -164,7 +168,7 @@ export default function SampleDetailPage() {
             disabled={busy}
             onClick={async () => {
               await run("Sampel diterima.", () =>
-                receiveSample(sample.id, new Date().toISOString(), form.receiveNotes),
+                receiveSample(sample.id, safeIso(), form.receiveNotes),
               );
             }}
           >

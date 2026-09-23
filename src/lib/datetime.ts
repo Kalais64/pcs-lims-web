@@ -1,14 +1,22 @@
 /** Safe calendar/time formatting — never throw "Invalid time value". */
-export function parseDate(value: string | null | undefined): Date | null {
-  if (value == null) return null;
+export function parseDate(value: string | number | Date | null | undefined): Date | null {
+  if (value == null || value === "") return null;
+  if (value instanceof Date) {
+    return Number.isNaN(value.getTime()) ? null : value;
+  }
   const trimmed = String(value).trim();
-  if (!trimmed) return null;
+  if (!trimmed || trimmed === "Invalid Date") return null;
   const date = new Date(trimmed);
   if (Number.isNaN(date.getTime())) return null;
   return date;
 }
 
-export function formatDateTimeId(value: string | null | undefined, empty = "—"): string {
+export function safeIso(value?: string | number | Date | null): string {
+  const date = value == null || value === "" ? new Date() : parseDate(value);
+  return (date ?? new Date()).toISOString();
+}
+
+export function formatDateTimeId(value: string | number | Date | null | undefined, empty = "—"): string {
   const date = parseDate(value);
   if (!date) return empty;
   try {
@@ -21,7 +29,7 @@ export function formatDateTimeId(value: string | null | undefined, empty = "—"
   }
 }
 
-export function formatDateId(value: string | null | undefined, empty = "—"): string {
+export function formatDateId(value: string | number | Date | null | undefined, empty = "—"): string {
   const raw = value?.trim() ?? "";
   const date = parseDate(raw.includes("T") ? raw : raw ? `${raw}T00:00:00` : "");
   if (!date) return empty;

@@ -1,7 +1,6 @@
 /** Backend schema facts — do not query these. */
-export const FORBIDDEN_TABLES = new Set(["units", "unit"]);
+export const FORBIDDEN_TABLES = new Set(["units", "unit", "lab_samples", "sample_records"]);
 
-/** Does not exist as column or view on samples (use sample_code). */
 export const FORBIDDEN_COLUMNS = new Set(["client_code"]);
 
 export function isForbiddenTable(name: string) {

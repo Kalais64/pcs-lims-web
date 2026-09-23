@@ -1,12 +1,23 @@
+import { parseDate, safeIso } from "@/lib/datetime";
+
 function jakartaParts(date = new Date()) {
+  const safe = parseDate(date) ?? new Date();
   const fmt = new Intl.DateTimeFormat("en-CA", {
     timeZone: "Asia/Jakarta",
     year: "numeric",
     month: "2-digit",
     day: "2-digit",
   });
-  const [year, month, day] = fmt.format(date).split("-");
-  return { year, yymmdd: `${year.slice(2)}${month}${day}` };
+  try {
+    const [year, month, day] = fmt.format(safe).split("-");
+    return { year, yymmdd: `${year.slice(2)}${month}${day}` };
+  } catch {
+    const fallback = new Date();
+    const y = String(fallback.getFullYear());
+    const m = String(fallback.getMonth() + 1).padStart(2, "0");
+    const d = String(fallback.getDate()).padStart(2, "0");
+    return { year: y, yymmdd: `${y.slice(2)}${m}${d}` };
+  }
 }
 
 function nextSeq(existing: string[], prefix: string) {
@@ -47,5 +58,5 @@ export function uid(prefix: string) {
 }
 
 export function nowIso() {
-  return new Date().toISOString();
+  return safeIso();
 }

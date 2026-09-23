@@ -1,0 +1,6 @@
+{
+  "redirects": [
+    { "source": "/customer", "destination": "/customers", "permanent": false },
+    { "source": "/invoice", "destination": "/invoices", "permanent": false }
+  ]
+}

@@ -1,62 +1,37 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
-import {
-  isForbiddenTable,
-  isMissingColumnError,
-  isMissingTableError,
-  missingColumnName,
-  stripForbiddenColumns,
-} from "@/lib/data/forbidden";
+import { isForbiddenTable, missingColumnName, stripForbiddenColumns } from "@/lib/data/forbidden";
 
-const cache = new Map<string, string>();
-
-export async function resolveTable(client: SupabaseClient, key: string, names: readonly string[]) {
-  const hit = cache.get(key);
-  if (hit) return hit;
-  let last = "";
-  for (const name of names) {
-    if (isForbiddenTable(name)) continue;
-    const { error } = await client.from(name).select("id").limit(1);
-    if (!error) {
-      cache.set(key, name);
-      return name;
-    }
-    last = error.message;
-    if (isMissingColumnError(error.message)) {
-      const retry = await client.from(name).select("*").limit(1);
-      if (!retry.error) {
-        cache.set(key, name);
-        return name;
-      }
-      last = retry.error.message;
-      if (isMissingTableError(retry.error.message)) continue;
-      cache.set(key, name);
-      return name;
-    }
-    if (isMissingTableError(error.message)) continue;
-    cache.set(key, name);
-    return name;
-  }
-  throw new Error(last || `Tabel ${key} tidak ditemukan.`);
-}
-
+/** Locked public schema names — no HTTP probes, no alias fallbacks. */
 export const TABLE_CANDIDATES = {
-  profiles: ["profiles", "staff_profiles", "users"],
+  profiles: ["profiles"],
   customers: ["customers"],
-  sites: ["customer_sites", "sites"],
-  matrices: ["matrices", "sample_matrices"],
-  parameters: ["parameters", "test_parameters"],
-  methods: ["methods", "test_methods"],
+  sites: ["customer_sites"],
+  matrices: ["matrices"],
+  parameters: ["parameters"],
+  methods: ["methods"],
   jobs: ["jobs"],
-  samplingEvents: ["sampling_events", "samplings"],
-  samples: ["samples", "lab_samples", "sample_records"],
-  results: ["test_results", "results", "sample_results"],
-  lhu: ["lhu_documents", "lhu_records"],
+  samplingEvents: ["sampling_events"],
+  samples: ["samples"],
+  results: ["test_results"],
+  lhu: ["lhu_documents"],
   invoices: ["invoices"],
   audit: ["audit_logs"],
-};
+} as const;
+
+/** public.samples columns verified in Backend migrations (incl. dual-control). */
+export const SAMPLE_SELECT =
+  "id, job_id, sampling_event_id, sample_code, barcode, matrix_id, collected_at, received_at, hold_time_hours, storage_location, status, notes, receive_notes, created_at, updated_at, verified_by, verified_at, approved_by, approved_at";
+
+export function resolveTable(key: keyof typeof TABLE_CANDIDATES) {
+  const name = TABLE_CANDIDATES[key][0];
+  if (isForbiddenTable(name)) {
+    throw new Error(`Tabel ${key} dilarang.`);
+  }
+  return name;
+}
 
 export async function selectAll(client: SupabaseClient, key: keyof typeof TABLE_CANDIDATES) {
-  const table = await resolveTable(client, key, TABLE_CANDIDATES[key]);
+  const table = resolveTable(key);
   const { data, error } = await client.from(table).select("*");
   if (error) throw new Error(error.message);
   return { table, data };
@@ -73,7 +48,7 @@ export async function insertRow(
   key: keyof typeof TABLE_CANDIDATES,
   payloads: Record<string, unknown>[],
 ) {
-  const table = await resolveTable(client, key, TABLE_CANDIDATES[key]);
+  const table = resolveTable(key);
   let last = "Insert gagal.";
   for (const raw of payloads) {
     let payload = stripForbiddenColumns(raw);
@@ -98,7 +73,7 @@ export async function updateRow(
   id: string,
   payloads: Record<string, unknown>[],
 ) {
-  const table = await resolveTable(client, key, TABLE_CANDIDATES[key]);
+  const table = resolveTable(key);
   let last = "Update gagal.";
   for (const raw of payloads) {
     let payload = stripForbiddenColumns(raw);
@@ -123,7 +98,7 @@ export async function deleteWhere(
   column: string,
   value: string,
 ) {
-  const table = await resolveTable(client, key, TABLE_CANDIDATES[key]);
+  const table = resolveTable(key);
   const { error } = await client.from(table).delete().eq(column, value);
   if (error) throw new Error(error.message);
 }

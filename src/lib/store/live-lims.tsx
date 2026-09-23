@@ -24,19 +24,16 @@ function fail(message: string): ActionResult {
 }
 
 function sampleFieldPayloads(fields: SampleFreeFields): Record<string, unknown>[] {
-  const base = {
-    matrix_id: fields.matrixId,
-    sample_code: fields.sampleCode,
-    receive_notes: fields.receiveNotes,
-    notes: fields.notes,
-    barcode: fields.barcode,
-    storage_location: fields.storageLocation,
-    collected_at: fields.collectedAt,
-  };
   return [
-    base,
-    { ...base, condition_notes: fields.receiveNotes },
-    { ...base, sampled_at: fields.collectedAt, location: fields.storageLocation },
+    {
+      matrix_id: fields.matrixId,
+      sample_code: fields.sampleCode,
+      receive_notes: fields.receiveNotes,
+      notes: fields.notes,
+      barcode: fields.barcode,
+      storage_location: fields.storageLocation,
+      collected_at: fields.collectedAt,
+    },
   ];
 }
 
@@ -145,21 +142,11 @@ export function LiveLimsProvider({
         await insertRow(client, "jobs", [
           {
             id,
-            job_no: jobNo,
+            number: jobNo,
             customer_id: input.customerId,
             site_id: input.siteId,
-            matrix_id: input.matrixId,
-            due_date: input.dueDate,
-            scope: input.scope,
-            status: "draft",
-          },
-          {
-            job_no: jobNo,
-            customer_id: input.customerId,
-            site_id: input.siteId,
-            matrix_id: input.matrixId,
-            due_date: input.dueDate,
-            scope: input.scope,
+            due_date: input.dueDate || null,
+            scope_notes: input.scope,
             status: "draft",
           },
         ]);
@@ -227,13 +214,7 @@ export function LiveLimsProvider({
         await insertRow(client, "samples", [
           {
             id,
-            sample_no: sampleNo,
-            job_id: input.jobId,
-            matrix_id: input.matrixId,
-            status: "expected",
-          },
-          {
-            sample_no: sampleNo,
+            sample_code: sampleNo,
             job_id: input.jobId,
             matrix_id: input.matrixId,
             status: "expected",
@@ -278,7 +259,7 @@ export function LiveLimsProvider({
     (id, receivedAt, conditionNotes) =>
       withClient(async (client) => {
         await updateRow(client, "samples", id, [
-          { received_at: receivedAt, condition_notes: conditionNotes, receive_notes: conditionNotes },
+          { received_at: receivedAt, receive_notes: conditionNotes },
         ]);
         const res = await transitionSample(client, id, "received");
         const sample = data.samples.find((s) => s.id === id);
@@ -398,11 +379,7 @@ export function LiveLimsProvider({
         if (actor.role !== "verifier" && actor.role !== "admin") {
           return fail("Hanya Verifier atau Admin yang boleh memverifikasi.");
         }
-        await updateRow(client, "samples", sampleId, [
-          { verified_by: actor.id },
-          { verified_by_id: actor.id },
-          { verifier_id: actor.id },
-        ]);
+        await updateRow(client, "samples", sampleId, [{ verified_by: actor.id }]);
         const res = await transitionSample(client, sampleId, "pending_approve");
         const sample = data.samples.find((s) => s.id === sampleId);
         if (sample) await syncJob(client, data, sample.jobId);
@@ -425,11 +402,7 @@ export function LiveLimsProvider({
             "Dual control: Verify dan Approve harus dua pengguna berbeda. Admin dapat override.",
           );
         }
-        await updateRow(client, "samples", sampleId, [
-          { approved_by: actor.id },
-          { approved_by_id: actor.id },
-          { approver_id: actor.id },
-        ]);
+        await updateRow(client, "samples", sampleId, [{ approved_by: actor.id }]);
         const res = await transitionSample(client, sampleId, "approved", {
           override: adminOverride,
           reason: adminOverride ? "Admin override dual control" : null,
@@ -445,9 +418,6 @@ export function LiveLimsProvider({
     (sampleId, _actor, reason) =>
       withClient(async (client) => {
         if (!reason.trim()) return fail("Alasan penolakan wajib diisi.");
-        await updateRow(client, "samples", sampleId, [
-          { reject_reason: reason.trim(), rejection_reason: reason.trim() },
-        ]);
         const res = await transitionSample(client, sampleId, "rejected", { reason: reason.trim() });
         const sample = data.samples.find((s) => s.id === sampleId);
         if (sample) await syncJob(client, data, sample.jobId);
