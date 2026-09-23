@@ -8,7 +8,7 @@ import type {
   LimsData,
   Method,
   Parameter,
-  Sample,
+  SampleFreeFields,
   SamplingEvent,
   TestResult,
   Unit,
@@ -32,6 +32,9 @@ export type LimsContextValue = {
   markSamplingDone: (id: string) => void;
   createSample: (input: { jobId: string; matrixId: string }) => string;
   receiveSample: (id: string, receivedAt: string, conditionNotes: string) => ActionResult | Promise<ActionResult>;
+  updateSampleFields: (id: string, fields: SampleFreeFields) => ActionResult | Promise<ActionResult>;
+  archiveSample: (id: string, actor: SessionUser, reason?: string) => ActionResult | Promise<ActionResult>;
+  startTesting: (sampleId: string) => ActionResult | Promise<ActionResult>;
   saveResults: (
     sampleId: string,
     rows: Omit<TestResult, "id" | "sampleId">[],

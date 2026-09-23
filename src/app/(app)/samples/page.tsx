@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import Link from "next/link";
 import { PageHeader } from "@/components/lims/page-header";
 import { Panel } from "@/components/lims/panel";
 import { StatusBadge } from "@/components/status/status-badge";
@@ -115,13 +116,14 @@ export default function SamplesPage() {
               <TableHead>Diterima</TableHead>
               <TableHead>Kondisi</TableHead>
               <TableHead>Status</TableHead>
+              <TableHead>Detail</TableHead>
               <TableHead>Terima</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {rows.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={7} className="text-[#5d7266]">
+                <TableCell colSpan={8} className="text-[#5d7266]">
                   Tidak ada sampel. Jika seed Backend ada (mis. PCS-S-260923-001), periksa RLS SELECT
                   pada tabel samples.
                 </TableCell>
@@ -145,6 +147,11 @@ export default function SamplesPage() {
                   <TableCell className="max-w-[180px] truncate">{s.conditionNotes || "—"}</TableCell>
                   <TableCell>
                     <StatusBadge entity="sample" status={s.status} />
+                  </TableCell>
+                  <TableCell>
+                    <Link href={`/samples/${s.id}`} className="text-sm text-[#16A34A] underline">
+                      Buka
+                    </Link>
                   </TableCell>
                   <TableCell>
                     {s.status === "expected" ? (

@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import Link from "next/link";
 import { PageHeader } from "@/components/lims/page-header";
 import { Panel } from "@/components/lims/panel";
 import { StatusBadge } from "@/components/status/status-badge";
@@ -108,7 +109,11 @@ export default function ApprovalsPage() {
                 const analyst = results[0]?.analystId;
                 return (
                   <TableRow key={s.id}>
-                    <TableCell className="font-medium">{s.sampleNo}</TableCell>
+                    <TableCell className="font-medium">
+                      <Link className="text-[#16A34A] underline" href={`/samples/${s.id}`}>
+                        {s.sampleNo}
+                      </Link>
+                    </TableCell>
                     <TableCell>{job?.jobNo}</TableCell>
                     <TableCell>
                       {results.length} parameter
