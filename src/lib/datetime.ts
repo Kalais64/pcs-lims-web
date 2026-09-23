@@ -30,7 +30,20 @@ export function formatDateTimeId(value: string | number | Date | null | undefine
 }
 
 export function formatDateId(value: string | number | Date | null | undefined, empty = "—"): string {
-  const raw = value?.trim() ?? "";
+  if (value instanceof Date) {
+    const date = parseDate(value);
+    if (!date) return empty;
+    try {
+      return new Intl.DateTimeFormat("id-ID", {
+        day: "2-digit",
+        month: "short",
+        year: "numeric",
+      }).format(date);
+    } catch {
+      return empty;
+    }
+  }
+  const raw = value == null ? "" : String(value).trim();
   const date = parseDate(raw.includes("T") ? raw : raw ? `${raw}T00:00:00` : "");
   if (!date) return empty;
   try {
