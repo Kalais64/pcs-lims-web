@@ -175,12 +175,12 @@ export function FixtureLimsProvider({ children }: { children: React.ReactNode })
                 ? fields.scope
                 : j.scope,
             siteId:
-              fields.siteId !== undefined && canEditJobSite(j.status, actor.role)
-                ? fields.siteId
+              fields.siteId !== undefined && canEditJobSite(j.status, actor.role) && fields.siteId.trim()
+                ? fields.siteId.trim()
                 : j.siteId,
             customerId:
-              fields.customerId !== undefined && canChangeJobCustomer(j.status, actor.role)
-                ? fields.customerId
+              fields.customerId !== undefined && canChangeJobCustomer(j.status, actor.role) && fields.customerId.trim()
+                ? fields.customerId.trim()
                 : j.customerId,
           };
         }),

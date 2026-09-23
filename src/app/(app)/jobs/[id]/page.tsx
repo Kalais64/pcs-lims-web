@@ -29,6 +29,7 @@ import {
 } from "@/lib/status/job-gate";
 import { useLims } from "@/lib/store/lims-provider";
 import type { ActionResult } from "@/lib/store/context";
+import { firstSiteIdForCustomer, sitesForCustomer } from "@/lib/domain/sites";
 import { formatDateId } from "@/lib/datetime";
 
 export default function JobDetailPage() {
@@ -53,18 +54,18 @@ export default function JobDetailPage() {
     if (!job) return;
     setForm({
       customerId: job.customerId,
-      siteId: job.siteId,
+      siteId: job.siteId || firstSiteIdForCustomer(data.sites, job.customerId),
       dueDate: job.dueDate,
       scope: job.scope,
     });
-  }, [job]);
+  }, [job, data.sites]);
 
   const editCustomer = Boolean(user && job && canChangeJobCustomer(job.status, user.role));
   const editSite = Boolean(user && job && canEditJobSite(job.status, user.role));
   const editDueScope = Boolean(user && job && canEditJobDueOrScope(job.status, user.role));
   const locked = job ? criticalJobFieldsLocked(job.status) : true;
   const hasChildren = job ? jobHasChildren(data, job.id) : false;
-  const sites = data.sites.filter((s) => s.customerId === form.customerId);
+  const sites = sitesForCustomer(data.sites, form.customerId);
 
   const samples = useMemo(
     () => data.samples.filter((s) => s.jobId === job?.id),
@@ -199,8 +200,11 @@ export default function JobDetailPage() {
               <Select
                 value={form.customerId || undefined}
                 onValueChange={(id) => {
-                  const firstSite = data.sites.find((s) => s.customerId === id);
-                  setForm({ ...form, customerId: id, siteId: firstSite?.id ?? "" });
+                  setForm({
+                    ...form,
+                    customerId: id,
+                    siteId: firstSiteIdForCustomer(data.sites, id),
+                  });
                 }}
               >
                 <SelectTrigger className="w-full">
@@ -229,7 +233,7 @@ export default function JobDetailPage() {
                 onValueChange={(id) => setForm({ ...form, siteId: id })}
               >
                 <SelectTrigger className="w-full">
-                  <SelectValue />
+                  <SelectValue placeholder={sites.length ? "Pilih site" : "Tidak ada site untuk customer ini"} />
                 </SelectTrigger>
                 <SelectContent>
                   {sites.map((s) => (

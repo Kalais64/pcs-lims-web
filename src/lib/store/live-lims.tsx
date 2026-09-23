@@ -5,6 +5,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { EMPTY_DATA } from "@/lib/data/empty";
 import { loadLiveData } from "@/lib/data/load-live";
 import { insertRow, updateRow, deleteWhere } from "@/lib/data/tables";
+import { omitEmptyUuidFields, uuidOrNull } from "@/lib/data/uuid";
 import {
   transitionInvoice,
   transitionJob,
@@ -185,14 +186,14 @@ export function LiveLimsProvider({
       const jobNo = nextJobNo(data.jobs.map((j) => j.jobNo));
       void withClient(async (client) => {
         await insertRow(client, "jobs", [
-          {
+          omitEmptyUuidFields({
             id,
             number: jobNo,
             customer_id: input.customerId,
-            site_id: input.siteId || null,
+            site_id: uuidOrNull(input.siteId),
             due_date: input.dueDate || null,
             scope_notes: input.scope || null,
-          },
+          }),
         ]);
         await refresh();
         return { ok: true };
@@ -231,11 +232,13 @@ export function LiveLimsProvider({
         if (fields.scope !== undefined && canEditJobDueOrScope(job.status, actor.role)) {
           payload.scope_notes = fields.scope;
         }
-        if (fields.siteId !== undefined && canEditJobSite(job.status, actor.role)) {
-          payload.site_id = fields.siteId || null;
+        const siteId = uuidOrNull(fields.siteId);
+        if (siteId && canEditJobSite(job.status, actor.role)) {
+          payload.site_id = siteId;
         }
-        if (fields.customerId !== undefined && canChangeJobCustomer(job.status, actor.role)) {
-          payload.customer_id = fields.customerId;
+        const customerId = uuidOrNull(fields.customerId);
+        if (customerId && canChangeJobCustomer(job.status, actor.role)) {
+          payload.customer_id = customerId;
         }
         if (Object.keys(payload).length === 0) {
           return fail("Tidak ada field yang boleh diubah pada status ini.");

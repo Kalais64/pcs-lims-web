@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { PageHeader } from "@/components/lims/page-header";
 import { Panel } from "@/components/lims/panel";
@@ -28,6 +28,7 @@ import { useAuth } from "@/lib/hooks/use-auth";
 import { JOB_STATUSES, JOB_STATUS_LABELS } from "@/lib/status/job";
 import { isValidDueDate } from "@/lib/status/job-gate";
 import { formatDateId } from "@/lib/datetime";
+import { firstSiteIdForCustomer, sitesForCustomer } from "@/lib/domain/sites";
 import { useLims } from "@/lib/store/lims-provider";
 
 export default function JobsPage() {
@@ -38,13 +39,26 @@ export default function JobsPage() {
   const [customerId, setCustomerId] = useState("all");
   const [message, setMessage] = useState<string | null>(null);
   const [form, setForm] = useState({
-    customerId: data.customers[0]?.id ?? "",
-    siteId: data.sites.find((s) => s.customerId === data.customers[0]?.id)?.id ?? "",
+    customerId: "",
+    siteId: "",
     dueDate: "",
     scope: "",
   });
 
-  const sites = data.sites.filter((s) => s.customerId === form.customerId);
+  useEffect(() => {
+    setForm((prev) => {
+      const customerId = prev.customerId || data.customers[0]?.id || "";
+      if (!customerId) return prev;
+      const sites = sitesForCustomer(data.sites, customerId);
+      const siteId = sites.some((s) => s.id === prev.siteId)
+        ? prev.siteId
+        : firstSiteIdForCustomer(data.sites, customerId);
+      if (customerId === prev.customerId && siteId === prev.siteId) return prev;
+      return { ...prev, customerId, siteId };
+    });
+  }, [data.customers, data.sites]);
+
+  const sites = sitesForCustomer(data.sites, form.customerId);
 
   const jobs = useMemo(
     () =>
@@ -172,8 +186,11 @@ export default function JobsPage() {
               <Select
                 value={form.customerId || undefined}
                 onValueChange={(id) => {
-                  const firstSite = data.sites.find((s) => s.customerId === id);
-                  setForm({ ...form, customerId: id, siteId: firstSite?.id ?? "" });
+                  setForm({
+                    ...form,
+                    customerId: id,
+                    siteId: firstSiteIdForCustomer(data.sites, id),
+                  });
                 }}
               >
                 <SelectTrigger className="w-full">
@@ -194,7 +211,7 @@ export default function JobsPage() {
                 onValueChange={(id) => setForm({ ...form, siteId: id })}
               >
                 <SelectTrigger className="w-full">
-                  <SelectValue placeholder="Pilih site" />
+                  <SelectValue placeholder={sites.length ? "Pilih site" : "Tidak ada site untuk customer ini"} />
                 </SelectTrigger>
                 <SelectContent>
                   {sites.map((s) => (

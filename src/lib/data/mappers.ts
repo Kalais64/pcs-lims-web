@@ -51,12 +51,14 @@ export function mapCustomers(data: unknown): Customer[] {
 }
 
 export function mapSites(data: unknown): CustomerSite[] {
-  return asRows(data).map((row) => ({
-    id: pickString(row, ["id"]),
-    customerId: pickString(row, ["customer_id"]),
-    name: pickString(row, ["name", "site_name"]),
-    address: pickString(row, ["address", "site_address"]),
-  }));
+  return asRows(data)
+    .map((row) => ({
+      id: pickString(row, ["id"]),
+      customerId: pickString(row, ["customer_id"]),
+      name: pickString(row, ["name", "site_name"]),
+      address: pickString(row, ["address", "site_address"]),
+    }))
+    .filter((row) => row.id && row.customerId);
 }
 
 export function mapNamed(data: unknown): Array<{ id: string; name: string }> {
